@@ -30,10 +30,7 @@ export class UserEntity {
   @UpdateDateColumn({ default: new Date() })
   updatedAt: Date;
 
-  @OneToOne(() => UserPrivateEntity, (userPrivate) => userPrivate.user, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @OneToOne(() => UserPrivateEntity, (userPrivate) => userPrivate.user)
   private: UserPrivateEntity;
 
   @OneToMany(() => GamePurchaseEntity, (game) => game.user)

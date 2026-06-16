@@ -27,7 +27,10 @@ export class UserPrivateEntity {
   @Column()
   password: string;
 
-  @OneToOne(() => UserEntity, (user) => user.private)
+  @OneToOne(() => UserEntity, (user) => user.private, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   user: UserEntity;
 }

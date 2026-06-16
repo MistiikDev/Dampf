@@ -67,9 +67,12 @@ export class UserService {
   }
 
   async update(userid: number, updateUserDto: UpdateUserDto) {
-    const user = await this.userRepository.findOne({
-      where: { userid: userid },
-    });
+    /*
+    TODO: Right now if the user updates its username or any data stored inside ACCESS_SESSION,
+    TODO: the session data will NOT be changed until a new JWT is generated (login / logout or refresh)
+    */
+
+    const user = await this.getUserBy({ userid: userid });
 
     if (user == undefined) {
       throw new NotFoundException('User not found');
@@ -84,8 +87,8 @@ export class UserService {
       await this.userPrivateRepository.save(userPrivate);
 
       return updateUserDto;
-    } catch {
-      throw new RuntimeException();
+    } catch (e) {
+      throw new RuntimeException(e);
     }
   }
 
