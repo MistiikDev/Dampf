@@ -1,9 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
-import { jwtSecret } from './auth.secrets';
-import { Role } from '../../roles/roles.enum'
+import { Role } from '../../roles/roles.enum';
 
 const jwtService = new JwtService({
-  secret: jwtSecret,
+  secret: '123456789',
 });
 
 const token = jwtService.sign({

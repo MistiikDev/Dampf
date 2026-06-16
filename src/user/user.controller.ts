@@ -12,11 +12,14 @@ import {
 } from '@nestjs/common';
 
 import { UserService } from './user.service';
-import { CreateUserDto, CreateUserResponseDTO } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  CreateUserDto,
+  CreateUserResponseDTO,
+} from '../core/dto/create-user.dto';
+import { UpdateUserDto } from '../core/dto/update-user.dto';
 
-import { Public } from '../auth/decorators/ispublic.decorator';
-import { Roles } from '../roles/decorators/roles.decorator';
+import { Public } from '../core/decorators/ispublic.decorator';
+import { Roles } from '../core/decorators/roles.decorator';
 import { Role } from '../roles/roles.enum';
 import {
   ApiBadRequestResponse,

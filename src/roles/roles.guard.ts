@@ -7,9 +7,10 @@ import {
 
 import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
-import { Role } from './roles.enum';
-import { Roles } from './decorators/roles.decorator';
 import { JwtService } from '@nestjs/jwt';
+
+import { Role } from './roles.enum';
+import { Roles } from '../core/decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -19,6 +20,7 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const req_roles: Role[] = this.reflector.getAllAndOverride(Roles, [
       context.getHandler(),
       context.getClass(),

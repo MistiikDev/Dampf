@@ -4,9 +4,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
+import { UserPayload } from '../user/types/user.types';
 
 @Injectable()
 export class AuthService {
@@ -15,8 +15,11 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  getProfile(req: Request): any {
-    return req['user'];
+  getProfile(req: Request): UserPayload {
+    const user: UserPayload = req['user'];
+
+    if (!user) throw new UnauthorizedException();
+    return user;
   }
 
   async login(
@@ -29,7 +32,7 @@ export class AuthService {
       throw new NotFoundException(`User ${username} does not exist`);
     }
 
-    // TODO : Need HASHING !!!!!
+    // TODO : Needs HASHING !!!!!
     if (user.password !== password) {
       throw new UnauthorizedException(`Credentials error`);
     }

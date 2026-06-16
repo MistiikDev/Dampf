@@ -9,6 +9,7 @@ async function bootstrap() {
     .setTitle('DAMPF API Documentation')
     .setDescription('API Endpoints and documentation')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

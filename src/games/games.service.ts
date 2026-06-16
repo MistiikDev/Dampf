@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-
-import { CreateGameDTO } from './dto/create-game.dto';
-import { UpdateGameDTO } from './dto/update-game.dto';
-import { UserPayload } from '../user/types/user.types';
+import {
+  BadRequestException,
+  Injectable,
+  NotAcceptableException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
+import { CreateGameDTO } from '../core/dto/create-game.dto';
+import { UpdateGameDTO } from '../core/dto/update-game.dto';
+
+import { UserPayload } from '../user/types/user.types';
 import { GameEntity } from './entity/game.entity';
 
 @Injectable()
@@ -13,30 +19,6 @@ export class GamesService {
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
   ) {}
-
-  private games = [
-    {
-      gameid: 1,
-      title: 'Counter-Strike',
-      description: '5v5 Competitive Shooter',
-      retail_price: 0,
-      publisher_id: 3,
-    },
-    {
-      gameid: 2,
-      title: 'Half-Life',
-      description: 'Story-Driven Puzzle Shooter',
-      retail_price: 9.99,
-      publisher_id: 3,
-    },
-    {
-      gameid: 3,
-      title: 'FIFA 22',
-      description: 'The Original 2022 Football Game',
-      retail_price: 69.99,
-      publisher_id: 1,
-    },
-  ];
 
   async findAll() {
     return await this.gameRepository.find();
@@ -55,14 +37,21 @@ export class GamesService {
   }
 
   async create(createGameDTO: CreateGameDTO) {
+    const gameId = (await this.gameRepository.count()) + 1;
+
     const newGame = {
-      gameid: this.games.length + 1,
+      gameid: gameId,
       ...createGameDTO,
     };
 
-    await this.gameRepository.save(newGame);
-
-    return newGame;
+    await this.gameRepository
+      .save(newGame)
+      .then((game) => {
+        return game;
+      })
+      .catch(() => {
+        throw new NotAcceptableException('Internal error');
+      });
   }
 
   async update(gameid: number, req: Request, updateGameDto: UpdateGameDTO) {
@@ -73,7 +62,14 @@ export class GamesService {
 
     if (user && user.userid == target_game?.publisher.userid) {
       Object.assign(target_game, updateGameDto);
-      await this.gameRepository.save(target_game);
+      await this.gameRepository
+        .save(target_game)
+        .then((game) => {
+          return game;
+        })
+        .catch(() => {
+          throw new BadRequestException('Format error');
+        });
     }
   }
 }

@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtSecret } from './constants/auth.secrets';
 import { APP_GUARD } from '@nestjs/core';
 
 import { AuthService } from './auth.service';
@@ -13,7 +12,7 @@ import { UserModule } from '../user/user.module';
     UserModule,
     JwtModule.register({
       global: true,
-      secret: jwtSecret,
+      secret: '123456789', // TODO : .env is tricky to setup so we will to it later
       signOptions: { expiresIn: '1d' },
     }),
   ],
