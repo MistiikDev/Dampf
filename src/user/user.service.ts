@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RuntimeException } from '@nestjs/core/errors/exceptions';
 
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 import {
   CreateUserDto,
@@ -11,77 +15,95 @@ import {
 import { Role } from '../roles/roles.enum';
 import { UserEntity } from './entity/user.entity';
 import { UpdateUserDto } from '../core/dto/update-user.dto';
+import { UserPrivateEntity } from './entity/user-private.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
+
+    @InjectRepository(UserPrivateEntity)
+    private userPrivateRepository: Repository<UserPrivateEntity>,
   ) {}
 
   async findAll() {
-    return await this.userRepository.find({ select: { password: false } });
+    return await this.userRepository.find();
   }
 
   async findOne(id: number) {
     return await this.userRepository.findOne({
       where: { userid: id },
-      select: { password: false },
     });
   }
 
   async create(user: CreateUserDto) {
-    const userid = (await this.userRepository.count()) + 1;
-
-    const new_user = {
-      userid: userid,
-      ...user,
-      role: Role.ROLE_PLAYER,
-    };
+    const userPublic = new UserEntity();
+    userPublic.username = user.username;
+    userPublic.role = Role.ROLE_PLAYER;
 
     try {
-      await this.userRepository.save(new_user);
+      const savedUser = await this.userRepository.save(userPublic);
+      const userPrivate: UserPrivateEntity = new UserPrivateEntity();
+      userPrivate.firstname = user.firstname;
+      userPrivate.lastname = user.lastname;
+      userPrivate.email = user.email;
+
+      userPrivate.password = user.password;
+      userPrivate.balance = 0;
+      userPrivate.user = savedUser;
+
+      await this.userPrivateRepository.save(userPrivate);
 
       const userCreateResponse: CreateUserResponseDTO = {
-        userid: new_user.userid,
-        username: new_user.username,
+        userid: userPublic.userid,
+        username: userPublic.username,
       };
 
       return userCreateResponse;
-    } catch {
-      throw new RuntimeException();
+    } catch (error) {
+      throw new BadRequestException(error);
     }
-  }
-  //
-
-  async getUserByUsername(username: string): Promise<UserEntity> {
-    const user: UserEntity | null = await this.userRepository.findOne({
-      where: { username: username },
-    });
-
-    if (user != null) {
-      return user;
-    }
-
-    throw new NotFoundException('Username not found in database');
   }
 
   async update(userid: number, updateUserDto: UpdateUserDto) {
-    const user = this.userRepository.findOne({ where: { userid: userid } });
+    const user = await this.userRepository.findOne({
+      where: { userid: userid },
+    });
 
     if (user == undefined) {
       throw new NotFoundException('User not found');
     }
+    const userPrivate = user.private;
 
     try {
-      await Object.assign(user, updateUserDto);
-      //await this.userRepository.save(user);
+      Object.assign(user, updateUserDto);
+      Object.assign(userPrivate, updateUserDto);
+
+      await this.userRepository.save(user);
+      await this.userPrivateRepository.save(userPrivate);
+
+      return updateUserDto;
     } catch {
       throw new RuntimeException();
     }
   }
 
   async delete(userid: number) {
-    return await this.userRepository.delete(userid);
+    await this.userRepository.delete(userid);
+  }
+
+  //
+  async getUserBy(filter: FindOptionsWhere<UserEntity>): Promise<UserEntity> {
+    const user: UserEntity | null = await this.userRepository.findOne({
+      where: filter,
+      relations: { private: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User not found`);
+    }
+
+    return user;
   }
 }

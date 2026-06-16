@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Request } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
   ApiResponse,
@@ -9,13 +10,19 @@ import {
 import { AuthService } from './auth.service';
 import { LoginUserDTO, LoginUserResponseDTO } from '../core/dto/login-user.dto';
 import { Public } from '../core/decorators/ispublic.decorator';
-import { UserPayload } from '../user/types/user.types';
+import {
+  ActiveSession,
+  UserSession,
+} from '../core/decorators/activeSession.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // GET auth/login
+  // GET /auth/login
+  // LOGIN INTO ACCOUNT
+
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Login to a specific user' })
   @ApiResponse({
     status: 201,
@@ -31,6 +38,10 @@ export class AuthController {
     return this.authService.login(loginUserDTO.username, loginUserDTO.password);
   }
 
+  // GET /auth/profile
+  // RETURN USER PROFILE FROM CURRENT ACTIVE SESSION
+
+  @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Retrieve current profiles information, based on token headers',
   })
@@ -45,7 +56,7 @@ export class AuthController {
     description: 'No credentials specified',
   })
   @Get('profile')
-  findOne(@Request() req: Request): any {
-    return this.authService.getProfile(req);
+  findOne(@ActiveSession() user: UserSession): any {
+    return user;
   }
 }

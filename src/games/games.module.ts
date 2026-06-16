@@ -5,9 +5,13 @@ import { GameEntity } from './entity/game.entity';
 import { GamePurchaseEntity } from '../billing/entity/game-purchase.entity';
 import { GamesController } from './games.controller';
 import { GamesService } from './games.service';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GameEntity, GamePurchaseEntity])],
+  imports: [
+    UserModule,
+    TypeOrmModule.forFeature([GameEntity, GamePurchaseEntity]),
+  ],
   controllers: [GamesController],
   providers: [GamesService],
   exports: [GamesService],

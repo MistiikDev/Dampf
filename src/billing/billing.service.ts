@@ -7,6 +7,7 @@ import {
 import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
 import { UserService } from '../user/user.service';
 import { GamesService } from '../games/games.service';
+import { UserPrivateEntity } from '../user/entity/user-private.entity';
 
 @Injectable()
 export class BillingService {
@@ -26,7 +27,9 @@ export class BillingService {
       throw new BadRequestException();
     }
 
-    if (game.retail_price > user.balance) {
+    const userPrivate: UserPrivateEntity = user.private;
+
+    if (game.retail_price > userPrivate.balance) {
       throw new NotAcceptableException('Balance insufficient');
     }
     // TRY to set game to user db

@@ -13,6 +13,8 @@ import { RolesModule } from './roles/roles.module';
 import { UserEntity } from './user/entity/user.entity';
 import { GameEntity } from './games/entity/game.entity';
 import { GamePurchaseEntity } from './billing/entity/game-purchase.entity';
+import { UserPrivateEntity } from './user/entity/user-private.entity';
+
 import { BillingController } from './billing/billing.controller';
 import { BillingService } from './billing/billing.service';
 import { BillingModule } from './billing/billing.module';
@@ -30,8 +32,9 @@ import { BillingModule } from './billing/billing.module';
       username: 'postgres',
       password: 'postgres',
       database: 'test_nest',
-      entities: [UserEntity, GameEntity, GamePurchaseEntity],
+      entities: [UserEntity, UserPrivateEntity, GameEntity, GamePurchaseEntity],
       synchronize: true,
+      dropSchema: true,
     }),
     BillingModule,
   ],

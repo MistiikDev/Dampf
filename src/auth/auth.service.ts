@@ -6,7 +6,7 @@ import {
 
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
-import { UserPayload } from '../user/types/user.types';
+import { UserPrivateEntity } from '../user/entity/user-private.entity';
 
 @Injectable()
 export class AuthService {
@@ -15,25 +15,22 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  getProfile(req: Request): UserPayload {
-    const user: UserPayload = req['user'];
-
-    if (!user) throw new UnauthorizedException();
-    return user;
-  }
-
   async login(
     username: string,
     password: string,
   ): Promise<{ access_token: string }> {
-    const user = await this.userService.getUserByUsername(username);
+    const user = await this.userService.getUserBy({
+      username: username,
+    });
 
     if (!user) {
       throw new NotFoundException(`User ${username} does not exist`);
     }
 
     // TODO : Needs HASHING !!!!!
-    if (user.password !== password) {
+    const userPrivate: UserPrivateEntity = user.private;
+
+    if (userPrivate.password !== password) {
       throw new UnauthorizedException(`Credentials error`);
     }
 

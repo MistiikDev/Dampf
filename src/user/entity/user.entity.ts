@@ -5,11 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 
 import { Role } from '../../roles/roles.enum';
 import { GameEntity } from '../../games/entity/game.entity';
 import { GamePurchaseEntity } from '../../billing/entity/game-purchase.entity';
+import { UserPrivateEntity } from './user-private.entity';
 
 @Entity()
 export class UserEntity {
@@ -19,29 +21,20 @@ export class UserEntity {
   @Column()
   username: string;
 
-  @Column()
-  firstname: string;
-
-  @Column({ nullable: true })
-  lastname: string;
-
-  @Column()
-  email: string;
-
-  @Column()
-  password: string;
-
   @Column({ default: Role.ROLE_PLAYER })
   role: string;
 
-  @Column({ default: 0 })
-  balance: number;
-
-  @CreateDateColumn()
+  @CreateDateColumn({ default: new Date() })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ default: new Date() })
   updatedAt: Date;
+
+  @OneToOne(() => UserPrivateEntity, (userPrivate) => userPrivate.user, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  private: UserPrivateEntity;
 
   @OneToMany(() => GamePurchaseEntity, (game) => game.user)
   ownedGames: GamePurchaseEntity[];

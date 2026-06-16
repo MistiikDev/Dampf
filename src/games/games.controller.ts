@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 
 import {
+  ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
   ApiResponse,
@@ -21,20 +22,30 @@ import { Public } from '../core/decorators/ispublic.decorator';
 import { Roles } from '../core/decorators/roles.decorator';
 import { Role } from '../roles/roles.enum';
 
-import { CreateGameDTO } from '../core/dto/create-game.dto';
+import {
+  CreateGameDTO,
+  CreateGameResponseDTO,
+} from '../core/dto/create-game.dto';
 import { UpdateGameDTO } from '../core/dto/update-game.dto';
 
 import { GamesService } from './games.service';
 import { GameEntity } from './entity/game.entity';
+import {
+  ActiveSession,
+  UserSession,
+} from '../core/decorators/activeSession.decorator';
 
 @Controller('games')
 export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 
+  // GET /game
+  // RETURNS A LIST OF ALL REGISTERED GAMES IN THE DB
+
   @ApiOperation({ summary: 'Retrieve information from all games' })
   @ApiResponse({
     status: 201,
-    description: 'Successfully retreived games',
+    description: 'Successfully retrieved games',
     type: Promise<GameEntity[]>,
   })
   @Get()
@@ -42,6 +53,9 @@ export class GamesController {
   findAll() {
     return this.gamesService.findAll();
   }
+
+  // GET /game/id
+  // RETURNS GAME DATA FROM GAMEID
 
   @ApiOperation({ summary: 'Retrieve information from a game by GAMEID' })
   @ApiResponse({
@@ -55,11 +69,16 @@ export class GamesController {
     return this.gamesService.findOne(gameid);
   }
 
+  // POST /game
+  // --PUBLISHER ONLY--: PUBLISH A GAME INTO DB AS OWN
+  // --ADMIN ONLY--: PUBLISH A GAME INTO DB
+
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Publish a game' })
   @ApiResponse({
     status: 201,
     description: 'Successfully published game',
-    type: Promise<GameEntity>,
+    type: CreateGameResponseDTO,
   })
   @ApiForbiddenResponse({
     description: 'You need to be a PUBLISHER to publish a game',
@@ -69,16 +88,23 @@ export class GamesController {
   })
   @Post()
   @Roles([Role.ROLE_ADMIN, Role.ROLE_PUBLISHER])
-  create(@Body(new ValidationPipe()) createGameDto: CreateGameDTO) {
-    return this.gamesService.create(createGameDto);
+  create(
+    @ActiveSession() user: UserSession,
+    @Body(new ValidationPipe()) createGameDto: CreateGameDTO,
+  ) {
+    return this.gamesService.create(user.userid, createGameDto);
   }
 
-  // POST
+  // POST /game/id
+  // --PUBLISHER ONLY--: EDIT PUBLISHED GAME'S INFO
+  // --ADMIN ONLY--:     EDIT ANY GAME'S INFO
+
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Edit a personal games information' })
   @ApiResponse({
     status: 201,
     description: 'Successfully published game',
-    type: Promise<GameEntity>,
+    type: UpdateGameDTO,
   })
   @ApiForbiddenResponse({
     description: 'You need to be a PUBLISHER to edit your games',
@@ -89,10 +115,10 @@ export class GamesController {
   @Patch(':id')
   @Roles([Role.ROLE_ADMIN, Role.ROLE_PUBLISHER])
   update(
+    @ActiveSession() user: UserSession,
     @Param('id', ParseIntPipe) gameid: number,
-    @Request() req: Request,
     @Body(new ValidationPipe()) updateGameDto: UpdateGameDTO,
   ) {
-    return this.gamesService.update(gameid, req, updateGameDto);
+    return this.gamesService.update(user.userid, gameid, updateGameDto);
   }
 }

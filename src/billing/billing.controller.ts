@@ -7,7 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import {
-  ApiBadRequestResponse,
+  ApiBadRequestResponse, ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotAcceptableResponse,
   ApiNotFoundResponse,
@@ -20,13 +20,16 @@ import {
   CreatePurchaseDTO,
   CreatePurchaseResponseDTO,
 } from '../core/dto/purchase.dto';
+import { ActiveSession, UserSession } from '../core/decorators/activeSession.decorator';
 
 @Controller('billing')
 export class BillingController {
   constructor(private billingService: BillingService) {}
 
   // POST /billing/purchase
+  // START A PURCHASE PROCESS FOR THE CURRENT LOGGED USER
 
+  @ApiBearerAuth('access-token')
   @ApiOperation({ description: 'Process a purchase' })
   @ApiResponse({
     status: 201,
@@ -41,12 +44,9 @@ export class BillingController {
   })
   @Post(':purchase')
   async purchase(
-    @Request() req: Request,
+    @ActiveSession() user: UserSession,
     @Body(new ValidationPipe()) purchaseDTO: CreatePurchaseDTO,
   ): Promise<boolean> {
-    const user = req['user'];
-    if (!user) throw new BadRequestException();
-
     return this.billingService.processPurchase(user.userid, purchaseDTO);
   }
 }
