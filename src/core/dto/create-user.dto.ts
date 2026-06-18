@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @ApiProperty({ description: 'User Email Address', example: 'john@doe.com' })
-  @IsEmail()
+  @IsEmail(undefined, { message: 'User Email Address is required' })
   email: string;
 
   @ApiProperty({
@@ -38,7 +38,7 @@ export class CreateUserDto {
 
 export class CreateUserResponseDTO {
   @ApiProperty()
-  userid: number;
+  userid: string;
 
   @ApiProperty()
   username: string;

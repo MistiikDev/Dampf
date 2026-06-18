@@ -14,8 +14,8 @@ import { TimestampEntity } from '../../core/generics/timestamp-entity.entity';
 
 @Entity()
 export class UserEntity extends TimestampEntity {
-  @PrimaryGeneratedColumn()
-  userid: number;
+  @PrimaryGeneratedColumn('uuid')
+  userid: string;
 
   @Column()
   username: string;

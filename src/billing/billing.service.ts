@@ -1,9 +1,7 @@
 import {
-  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
-  NotAcceptableException,
 } from '@nestjs/common';
 
 import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
@@ -26,10 +24,13 @@ export class BillingService {
   ) {}
 
   async processPurchase(
-    userid: number,
+    userid: string,
     purchaseDTO: CreatePurchaseDTO,
   ): Promise<GenericSuccessResponseDTO> {
-    const user = await this.userService.findEntry({ userid: userid });
+    const user = await this.userService.findEntry(
+      { userid: userid },
+      { private: true },
+    );
     const game = await this.gameService.findEntry({
       gameid: purchaseDTO.productid,
     });
