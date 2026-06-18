@@ -28,7 +28,10 @@ export class CreateGameDTO {
     example: 1,
   })
   @IsNumber()
-  @IsNotEmpty()
+  @IsNotEmpty({
+    message:
+      'Publisher ID must point to a valid user id with publishing rights!',
+  })
   publisher_id: number;
 }
 
@@ -39,5 +42,5 @@ export class CreateGameResponseDTO {
 
   @ApiProperty()
   @IsNumber()
-  publisherid: number;
+  publisherid: string;
 }

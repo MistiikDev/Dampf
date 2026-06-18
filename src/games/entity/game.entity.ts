@@ -16,7 +16,7 @@ export class GameEntity extends TimestampEntity {
   @PrimaryGeneratedColumn()
   gameid: number;
 
-  @Column()
+  @Column({ unique: true })
   title: string;
 
   @Column()

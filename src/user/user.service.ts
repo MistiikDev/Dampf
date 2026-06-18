@@ -28,6 +28,14 @@ export class UserService extends GenericService<UserEntity> {
   }
 
   async create(user: CreateUserDto) {
+    /*
+    User Object is separated into 2 entites
+    USER PUBLIC: Contains basic public information (username, owned games, hours played etc..)
+    USER PRIVATE: Contains all registration information (email; password hashed, etc..)
+
+    Routes that execute SELECT queries for USER will ONLY return USER PUBLIC information
+     */
+
     const userPublic = new UserEntity();
     userPublic.username = user.username;
     userPublic.role = Role.ROLE_PLAYER;
@@ -48,23 +56,24 @@ export class UserService extends GenericService<UserEntity> {
 
     try {
       await this.userPrivateRepository.save(userPrivate);
-      await this.saveItem(userPublic);
-
-      const userCreateResponse: CreateUserResponseDTO = {
-        userid: userPublic.userid,
-        username: userPublic.username,
-      };
-
-      return userCreateResponse;
     } catch {
       throw new HttpException(
         'User is already registered!',
         HttpStatus.CONFLICT,
       );
     }
+
+    await this.saveItem(userPublic);
+
+    const userCreateResponse: CreateUserResponseDTO = {
+      userid: userPublic.userid,
+      username: userPublic.username,
+    };
+
+    return userCreateResponse;
   }
 
-  async update(userid: number, updateUserDto: UpdateUserDto) {
+  async update(userid: string, updateUserDto: UpdateUserDto) {
     /*
     TODO: Right now if the user updates its username or any data stored inside ACCESS_SESSION,
     TODO: the session data will NOT be changed until a new JWT is generated (login / logout or clear jwt)
@@ -77,6 +86,7 @@ export class UserService extends GenericService<UserEntity> {
     const user = await this.findEntry({ userid: userid });
     const userPrivate = user.private;
 
+    // Update both entries
     try {
       Object.assign(user, updateUserDto);
       Object.assign(userPrivate, updateUserDto);
@@ -95,8 +105,8 @@ export class UserService extends GenericService<UserEntity> {
     }
   }
 
-  // INTERNAL ONLY
-  async givePublisherRights(userid: number) {
+  // INTERNAL ONLY, allows to give created user publishing rights faster than editing the token in swagger
+  async givePublisherRights(userid: string) {
     const user = await this.findEntry({ userid: userid });
     if (user.role != Role.ROLE_PLAYER) {
       throw new HttpException(
@@ -119,11 +129,15 @@ export class UserService extends GenericService<UserEntity> {
     }
   }
 
+  // TEMPORARY; needs more security / be more generic
+  // TODO: Add a generic ModifiyField() method inside Generic Service
+  // Problem: Generic Service only references one repository (user has 2)
+
   async addUserBalance(
-    userid: number,
+    userid: string,
     balanceChange: number,
   ): Promise<boolean> {
-    const user = await this.findEntry({ userid: userid });
+    const user = await this.findEntry({ userid: userid }, { private: true });
     const userPrivate = user.private;
 
     userPrivate.balance += balanceChange;

@@ -23,7 +23,7 @@ export class GamesService extends GenericService<GameEntity> {
     super(gameRepository);
   }
 
-  async create(userid: number, createGameDTO: CreateGameDTO) {
+  async create(userid: string, createGameDTO: CreateGameDTO) {
     const user = await this.userService.findEntry({ userid: userid });
 
     if (user.role === Role.ROLE_PLAYER) {
@@ -39,21 +39,30 @@ export class GamesService extends GenericService<GameEntity> {
     game.description = createGameDTO.description;
     game.publisher = user;
 
-    const savedGame = await this.gameRepository.save(game);
+    try {
+      const savedGame = await this.gameRepository.save(game);
 
-    const response: CreateGameResponseDTO = {
-      gameid: savedGame.gameid,
-      publisherid: savedGame.publisher.userid,
-    };
+      const response: CreateGameResponseDTO = {
+        gameid: savedGame.gameid,
+        publisherid: savedGame.publisher.userid,
+      };
 
-    return response;
+      return response;
+    } catch {
+      // 99% a duplicate issue with TITLE { unique: true }
+      throw new HttpException(
+        'Game must be original!',
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
   }
 
-  async update(userid: number, gameid: number, updateGameDto: UpdateGameDTO) {
+  async update(userid: string, gameid: number, updateGameDto: UpdateGameDTO) {
     const target_game = await this.gameRepository.findOne({
       where: { gameid: gameid },
     });
 
+    // Only let user update if it is his OWN game
     if (userid == target_game?.publisher.userid) {
       Object.assign(target_game, updateGameDto);
 

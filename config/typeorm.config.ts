@@ -14,6 +14,5 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
 
     autoLoadEntities: true,
     synchronize: true,
-    dropSchema: true,
   }),
 };

@@ -3,11 +3,11 @@ import {
   Post,
   Body,
   ValidationPipe,
-  Request,
+  Request, Get,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
+  ApiBearerAuth, ApiForbiddenResponse,
   ApiOperation,
   ApiPaymentRequiredResponse,
   ApiResponse,
@@ -43,11 +43,30 @@ export class BillingController {
   @ApiPaymentRequiredResponse({
     description: 'Insufficient balance',
   })
-  @Post(':purchase')
+  @Post('purchase')
   async purchase(
     @ActiveSession() user: UserSession,
     @Body(new ValidationPipe()) purchaseDTO: CreatePurchaseDTO,
   ): Promise<GenericSuccessResponseDTO> {
     return this.billingService.processPurchase(user.userid, purchaseDTO);
   }
+
+  // GET /billing/balance
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ description: 'Check your balance' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved balance',
+    type: UserSession,
+  })
+  @ApiForbiddenResponse({
+    description: 'You need to be logged in to check your balance',
+  })
+  @Get('balance')
+  getBalance(@ActiveSession() user: UserSession) {
+    return user;
+  }
+
+  // POST /billing/balance/recharge
+  // RECHARGE BALANCE FOR CURRENT LOGGED USER
 }

@@ -4,12 +4,21 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   ValidationPipe,
-  Request,
+  ParseUUIDPipe,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 import { UserService } from './user.service';
 import {
@@ -21,17 +30,8 @@ import { UpdateUserDto } from '../core/dto/update-user.dto';
 import { Public } from '../core/decorators/ispublic.decorator';
 import { Roles } from '../core/decorators/roles.decorator';
 import { Role } from '../roles/roles.enum';
-import {
-  ApiBadRequestResponse,
-  ApiBearerAuth,
-  ApiConflictResponse,
-  ApiForbiddenResponse,
-  ApiInternalServerErrorResponse,
-  ApiNotFoundResponse,
-  ApiOperation,
-  ApiResponse,
-} from '@nestjs/swagger';
 import { UserEntity } from './entity/user.entity';
+
 import {
   ActiveSession,
   UserSession,
@@ -101,7 +101,7 @@ export class UserController {
   @Get(':id')
   @Public()
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<UserEntity | null> {
     return await this.userService.findEntry(
       { userid: id },
@@ -166,7 +166,7 @@ export class UserController {
   @Patch(':id')
   @Roles([Role.ROLE_ADMIN])
   async updateThis(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
   ) {
     return await this.userService.update(id, updateUserDto);
@@ -204,7 +204,7 @@ export class UserController {
   })
   @Delete(':id')
   @Roles([Role.ROLE_ADMIN])
-  async deleteThis(@Param('id', ParseIntPipe) userid: number) {
+  async deleteThis(@Param('id', ParseUUIDPipe) userid: string) {
     return await this.userService.deleteFromProprety({ userid: userid });
   }
 }
