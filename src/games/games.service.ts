@@ -11,33 +11,20 @@ import { UpdateGameDTO } from '../core/dto/update-game.dto';
 import { GameEntity } from './entity/game.entity';
 import { UserService } from '../user/user.service';
 import { Role } from '../roles/roles.enum';
+import { GenericService } from '../core/generics/generic.service';
 
 @Injectable()
-export class GamesService {
+export class GamesService extends GenericService<GameEntity> {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
     private userService: UserService,
-  ) {}
-
-  async findAll() {
-    return await this.gameRepository.find();
-  }
-
-  async findOne(gameid: number) {
-    const game = await this.gameRepository.findOne({
-      where: { gameid: gameid },
-    });
-
-    if (game) {
-      return game;
-    }
-
-    throw new HttpException('Game Not Found', HttpStatus.NOT_FOUND);
+  ) {
+    super(gameRepository);
   }
 
   async create(userid: number, createGameDTO: CreateGameDTO) {
-    const user = await this.userService.getUserBy({ userid: userid });
+    const user = await this.userService.findEntry({ userid: userid });
 
     if (user.role === Role.ROLE_PLAYER) {
       throw new HttpException(
@@ -74,10 +61,5 @@ export class GamesService {
 
       return updateGameDto;
     }
-  }
-
-  // INTERNAL ONLY
-  async saveRepository(game: GameEntity) {
-    return await this.gameRepository.save(game);
   }
 }

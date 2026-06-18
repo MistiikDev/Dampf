@@ -52,7 +52,7 @@ export class GamesController {
   @Get()
   @Public()
   findAll() {
-    return this.gamesService.findAll();
+    return this.gamesService.findAllEntries();
   }
 
   // GET /game/id
@@ -67,7 +67,7 @@ export class GamesController {
   @Get(':id')
   @Public()
   findOne(@Param('id', ParseIntPipe) gameid: number) {
-    return this.gamesService.findOne(gameid);
+    return this.gamesService.findEntry({ gameid: gameid });
   }
 
   // POST /game

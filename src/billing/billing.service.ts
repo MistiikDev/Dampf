@@ -29,8 +29,10 @@ export class BillingService {
     userid: number,
     purchaseDTO: CreatePurchaseDTO,
   ): Promise<GenericSuccessResponseDTO> {
-    const user = await this.userService.getUserBy({ userid: userid });
-    const game = await this.gameService.findOne(purchaseDTO.productid);
+    const user = await this.userService.findEntry({ userid: userid });
+    const game = await this.gameService.findEntry({
+      gameid: purchaseDTO.productid,
+    });
 
     if (!user || !game) {
       throw new HttpException(
@@ -58,8 +60,8 @@ export class BillingService {
     // TRY to set game to user db
     // THEN retract price from user balance
 
-    await this.userService.saveRepository(user);
-    await this.gameService.saveRepository(game);
+    await this.userService.saveItem(user);
+    await this.gameService.saveItem(game);
 
     await this.userGamePurchaseRepository.save(GamePurchase);
 

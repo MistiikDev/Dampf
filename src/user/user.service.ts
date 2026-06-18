@@ -1,7 +1,9 @@
+import * as bcrypt from 'bcrypt';
+
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+
 import {
   CreateUserDto,
   CreateUserResponseDTO,
@@ -11,36 +13,18 @@ import { UserEntity } from './entity/user.entity';
 import { UpdateUserDto } from '../core/dto/update-user.dto';
 import { UserPrivateEntity } from './entity/user-private.entity';
 
-import { ConfigService } from '@nestjs/config';
+import { GenericService } from '../core/generics/generic.service';
 
 @Injectable()
-export class UserService {
+export class UserService extends GenericService<UserEntity> {
   constructor(
-    private configService: ConfigService,
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
 
     @InjectRepository(UserPrivateEntity)
     private userPrivateRepository: Repository<UserPrivateEntity>,
   ) {
-    this.configService = new ConfigService();
-  }
-
-  async findAll() {
-    return await this.userRepository.find();
-  }
-
-  async findOne(id: number) {
-    const user = await this.userRepository.findOne({
-      where: { userid: id },
-      relations: { ownedGames: { game: true } },
-    });
-
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    return user;
+    super(userRepository);
   }
 
   async create(user: CreateUserDto) {
@@ -64,12 +48,7 @@ export class UserService {
 
     try {
       await this.userPrivateRepository.save(userPrivate);
-      await this.userRepository.save(userPublic).catch(() => {
-        throw new HttpException(
-          'Could not save user data',
-          HttpStatus.BAD_REQUEST,
-        );
-      });
+      await this.saveItem(userPublic);
 
       const userCreateResponse: CreateUserResponseDTO = {
         userid: userPublic.userid,
@@ -95,7 +74,7 @@ export class UserService {
       throw new HttpException('No payload sent', HttpStatus.NOT_ACCEPTABLE);
     }
 
-    const user = await this.getUserBy({ userid: userid });
+    const user = await this.findEntry({ userid: userid });
     const userPrivate = user.private;
 
     try {
@@ -116,13 +95,9 @@ export class UserService {
     }
   }
 
-  async delete(userid: number) {
-    await this.userRepository.delete(userid);
-  }
-
   // INTERNAL ONLY
   async givePublisherRights(userid: number) {
-    const user = await this.getUserBy({ userid: userid });
+    const user = await this.findEntry({ userid: userid });
     if (user.role != Role.ROLE_PLAYER) {
       throw new HttpException(
         'Specified user already has publishing rights',
@@ -144,24 +119,11 @@ export class UserService {
     }
   }
 
-  async getUserBy(filter: FindOptionsWhere<UserEntity>): Promise<UserEntity> {
-    const user: UserEntity | null = await this.userRepository.findOne({
-      where: filter,
-      relations: { private: true },
-    });
-
-    if (user == undefined) {
-      throw new HttpException('User was not found!', HttpStatus.NOT_FOUND);
-    }
-
-    return user;
-  }
-
   async addUserBalance(
     userid: number,
     balanceChange: number,
   ): Promise<boolean> {
-    const user = await this.getUserBy({ userid: userid });
+    const user = await this.findEntry({ userid: userid });
     const userPrivate = user.private;
 
     userPrivate.balance += balanceChange;
@@ -174,9 +136,5 @@ export class UserService {
     });
 
     return true;
-  }
-
-  async saveRepository(user: UserEntity) {
-    return await this.userRepository.save(user);
   }
 }

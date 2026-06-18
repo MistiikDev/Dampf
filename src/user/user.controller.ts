@@ -58,7 +58,7 @@ export class UserController {
   @Get()
   @Public()
   async findAll(): Promise<UserEntity[]> {
-    return await this.userService.findAll();
+    return await this.userService.findAllEntries();
   }
 
   // GET /user/license
@@ -103,7 +103,10 @@ export class UserController {
   async findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<UserEntity | null> {
-    return await this.userService.findOne(id);
+    return await this.userService.findEntry(
+      { userid: id },
+      { ownedGames: { game: true } },
+    );
   }
 
   // POST /user
@@ -184,7 +187,7 @@ export class UserController {
   @Delete()
   @Roles([Role.ROLE_PLAYER])
   async delete(@ActiveSession() user: UserSession) {
-    return await this.userService.delete(user.userid);
+    return await this.userService.deleteFromProprety({ userid: user.userid });
   }
 
   // DELETE /user/id
@@ -202,6 +205,6 @@ export class UserController {
   @Delete(':id')
   @Roles([Role.ROLE_ADMIN])
   async deleteThis(@Param('id', ParseIntPipe) userid: number) {
-    return await this.userService.delete(userid);
+    return await this.userService.deleteFromProprety({ userid: userid });
   }
 }

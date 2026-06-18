@@ -20,9 +20,12 @@ export class AuthService {
     username: string,
     password: string,
   ): Promise<{ access_token: string }> {
-    const user = await this.userService.getUserBy({
-      username: username,
-    });
+    const user = await this.userService.findEntry(
+      {
+        username: username,
+      },
+      { private: true },
+    );
 
     if (!user) {
       throw new NotFoundException(`User ${username} does not exist`);
