@@ -2,17 +2,17 @@ import {
   Column,
   PrimaryGeneratedColumn,
   Entity,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 
 import { UserEntity } from '../../user/entity/user.entity';
 import { GamePurchaseEntity } from '../../billing/entity/game-purchase.entity';
+import { TimestampEntity } from '../../core/generics/timestamp-entity.entity';
 
 @Entity()
-export class GameEntity {
+export class GameEntity extends TimestampEntity {
   @PrimaryGeneratedColumn()
   gameid: number;
 
@@ -25,13 +25,8 @@ export class GameEntity {
   @Column()
   retail_price: number;
 
-  @CreateDateColumn()
-  created_at: Date;
-
-  @UpdateDateColumn()
-  updated_at: Date;
-
   @ManyToOne(() => UserEntity, (user) => user.publishedGames)
+  @JoinColumn({ foreignKeyConstraintName: 'publisher_user_id' })
   publisher: UserEntity;
 
   @OneToMany(() => GamePurchaseEntity, (gamePurchase) => gamePurchase.game)

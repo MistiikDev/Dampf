@@ -1,11 +1,12 @@
+import * as bcrypt from 'bcrypt';
 import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
 import { UserService } from '../user/user.service';
-import { JwtService } from '@nestjs/jwt';
 import { UserPrivateEntity } from '../user/entity/user-private.entity';
 
 @Injectable()
@@ -27,10 +28,9 @@ export class AuthService {
       throw new NotFoundException(`User ${username} does not exist`);
     }
 
-    // TODO : Needs HASHING !!!!!
     const userPrivate: UserPrivateEntity = user.private;
-
-    if (userPrivate.password !== password) {
+    const isMatch = await bcrypt.compare(password, userPrivate.password);
+    if (!isMatch) {
       throw new UnauthorizedException(`Credentials error`);
     }
 

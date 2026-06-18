@@ -8,7 +8,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'String used across community endpoints to identify the user',
-    example: 'xXDarkSlayer420Xx',
+    example: 'Gaben',
   })
   @IsString()
   @IsNotEmpty()
@@ -30,7 +30,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'Users password',
-    example: 'PleaseChangePassword',
+    example: 'password123',
   })
   @IsString()
   password: string;

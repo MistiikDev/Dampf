@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -13,6 +10,7 @@ import { UpdateGameDTO } from '../core/dto/update-game.dto';
 
 import { GameEntity } from './entity/game.entity';
 import { UserService } from '../user/user.service';
+import { Role } from '../roles/roles.enum';
 
 @Injectable()
 export class GamesService {
@@ -35,11 +33,18 @@ export class GamesService {
       return game;
     }
 
-    throw new NotFoundException(`Game ${game} not found.`);
+    throw new HttpException('Game Not Found', HttpStatus.NOT_FOUND);
   }
 
   async create(userid: number, createGameDTO: CreateGameDTO) {
     const user = await this.userService.getUserBy({ userid: userid });
+
+    if (user.role === Role.ROLE_PLAYER) {
+      throw new HttpException(
+        'Publisher ID must point to a valid user with PUBLISHER permissions',
+        HttpStatus.FORBIDDEN,
+      );
+    }
 
     const game = new GameEntity();
     game.title = createGameDTO.title;
@@ -69,5 +74,10 @@ export class GamesService {
 
       return updateGameDto;
     }
+  }
+
+  // INTERNAL ONLY
+  async saveRepository(game: GameEntity) {
+    return await this.gameRepository.save(game);
   }
 }

@@ -21,7 +21,7 @@ export class UserPrivateEntity {
   @Column()
   balance: number;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @Column()

@@ -4,23 +4,24 @@ import {
   Body,
   ValidationPipe,
   Request,
-  BadRequestException,
 } from '@nestjs/common';
 import {
-  ApiBadRequestResponse, ApiBearerAuth,
-  ApiForbiddenResponse,
-  ApiNotAcceptableResponse,
-  ApiNotFoundResponse,
+  ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiOperation,
+  ApiPaymentRequiredResponse,
   ApiResponse,
 } from '@nestjs/swagger';
 
 import { BillingService } from './billing.service';
+
+import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
+
 import {
-  CreatePurchaseDTO,
-  CreatePurchaseResponseDTO,
-} from '../core/dto/purchase.dto';
-import { ActiveSession, UserSession } from '../core/decorators/activeSession.decorator';
+  ActiveSession,
+  UserSession,
+} from '../core/decorators/activeSession.decorator';
+import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
 
 @Controller('billing')
 export class BillingController {
@@ -34,19 +35,19 @@ export class BillingController {
   @ApiResponse({
     status: 201,
     description: 'Successfully processed purchase',
-    type: CreatePurchaseResponseDTO,
+    type: GenericSuccessResponseDTO,
   })
   @ApiBadRequestResponse({
     description: 'You need to be logged in to process a purchase',
   })
-  @ApiNotAcceptableResponse({
+  @ApiPaymentRequiredResponse({
     description: 'Insufficient balance',
   })
   @Post(':purchase')
   async purchase(
     @ActiveSession() user: UserSession,
     @Body(new ValidationPipe()) purchaseDTO: CreatePurchaseDTO,
-  ): Promise<boolean> {
+  ): Promise<GenericSuccessResponseDTO> {
     return this.billingService.processPurchase(user.userid, purchaseDTO);
   }
 }

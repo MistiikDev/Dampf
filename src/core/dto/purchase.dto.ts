@@ -9,12 +9,3 @@ export class CreatePurchaseDTO {
   @IsNotEmpty()
   productid: number;
 }
-
-export class CreatePurchaseResponseDTO {
-  @ApiProperty({
-    description:
-      'Returns true or false whether the purchase has been processed or not',
-    example: false,
-  })
-  success: boolean;
-}

@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -24,8 +25,10 @@ export class GamePurchaseEntity {
   updated_at: Date;
 
   @ManyToOne(() => GameEntity, (game) => game.owners)
+  @JoinColumn({ foreignKeyConstraintName: 'game_purchased_id' })
   game: GameEntity;
 
   @ManyToOne(() => UserEntity, (user) => user.ownedGames)
+  @JoinColumn({ foreignKeyConstraintName: 'buyer_user_id' })
   user: UserEntity;
 }

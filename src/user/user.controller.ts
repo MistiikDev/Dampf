@@ -24,7 +24,10 @@ import { Role } from '../roles/roles.enum';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
@@ -33,6 +36,7 @@ import {
   ActiveSession,
   UserSession,
 } from '../core/decorators/activeSession.decorator';
+import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
 
 @Controller('user')
 export class UserController {
@@ -46,14 +50,37 @@ export class UserController {
     status: 201,
     description: 'Successfully fetched all users',
     type: UserEntity,
+    isArray: true,
   })
   @ApiForbiddenResponse({
     description: 'User must be logged in to fetch all users',
   })
   @Get()
   @Public()
-  findAll() {
-    return this.userService.findAll();
+  async findAll(): Promise<UserEntity[]> {
+    return await this.userService.findAll();
+  }
+
+  // GET /user/license
+  // GIVES PUBLISHER LICENSE TO A PLAYER (IMAGINE PAYING A FEE FOR ENTRANCE)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Gives publishing rights to a user after paying the PUBLISHER fee',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Success!',
+    type: GenericSuccessResponseDTO,
+  })
+  @ApiBadRequestResponse({
+    description: 'User already has PUBLISHER rights!',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Error while saving user data',
+  })
+  @Get('license')
+  async getPublisherRights(@ActiveSession() user: UserSession) {
+    return await this.userService.givePublisherRights(user.userid);
   }
 
   // GET /user/id
@@ -68,10 +95,15 @@ export class UserController {
   @ApiForbiddenResponse({
     description: 'User must be logged in to fetch all users',
   })
+  @ApiNotFoundResponse({
+    description: 'User does not exist',
+  })
   @Get(':id')
   @Public()
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.findOne(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserEntity | null> {
+    return await this.userService.findOne(id);
   }
 
   // POST /user
@@ -84,11 +116,14 @@ export class UserController {
     description: 'Successfully created user',
     type: CreateUserResponseDTO,
   })
-  @ApiBadRequestResponse({ description: 'Bad payload sent ' })
+  @ApiBadRequestResponse({ description: 'Bad payload sent' })
+  @ApiConflictResponse({ description: 'User already exists in database' })
   @Post()
   @Public()
-  create(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  async create(
+    @Body(new ValidationPipe()) createUserDto: CreateUserDto,
+  ): Promise<CreateUserResponseDTO> {
+    return await this.userService.create(createUserDto);
   }
 
   // PATCH /user
@@ -103,12 +138,12 @@ export class UserController {
   })
   @Patch()
   @Roles([Role.ROLE_PLAYER])
-  update(
+  async update(
     @ActiveSession() user: UserSession,
     @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
   ) {
     if (user) {
-      return this.userService.update(user.userid, updateUserDto);
+      return await this.userService.update(user.userid, updateUserDto);
     }
   }
 
@@ -127,11 +162,11 @@ export class UserController {
   })
   @Patch(':id')
   @Roles([Role.ROLE_ADMIN])
-  updateThis(
+  async updateThis(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
   ) {
-    return this.userService.update(id, updateUserDto);
+    return await this.userService.update(id, updateUserDto);
   }
 
   // DELETE /user
@@ -140,7 +175,7 @@ export class UserController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Delete current active user' })
   @ApiResponse({
-    status: 201,
+    status: 200,
     description: 'Successfully deleted current user',
   })
   @ApiForbiddenResponse({
@@ -148,8 +183,8 @@ export class UserController {
   })
   @Delete()
   @Roles([Role.ROLE_PLAYER])
-  delete(@ActiveSession() user: UserSession) {
-    return this.userService.delete(user.userid);
+  async delete(@ActiveSession() user: UserSession) {
+    return await this.userService.delete(user.userid);
   }
 
   // DELETE /user/id
@@ -158,7 +193,7 @@ export class UserController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Delete a user by USERID' })
   @ApiResponse({
-    status: 201,
+    status: 200,
     description: 'Successfully deleted user',
   })
   @ApiForbiddenResponse({
@@ -166,7 +201,7 @@ export class UserController {
   })
   @Delete(':id')
   @Roles([Role.ROLE_ADMIN])
-  deleteThis(@Param('id', ParseIntPipe) userid: number) {
-    return this.userService.delete(userid);
+  async deleteThis(@Param('id', ParseIntPipe) userid: number) {
+    return await this.userService.delete(userid);
   }
 }

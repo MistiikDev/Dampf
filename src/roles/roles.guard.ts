@@ -1,8 +1,9 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 
 import { Request } from 'express';
@@ -20,7 +21,6 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const req_roles: Role[] = this.reflector.getAllAndOverride(Roles, [
       context.getHandler(),
       context.getClass(),
@@ -38,7 +38,10 @@ export class RolesGuard implements CanActivate {
 
       return req_roles.includes(user_roles);
     } catch {
-      throw new UnauthorizedException();
+      throw new HttpException(
+        'Forbidden access denied for this action',
+        HttpStatus.FORBIDDEN,
+      );
     }
   }
 }

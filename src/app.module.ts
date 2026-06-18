@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -9,15 +10,9 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { GamesModule } from './games/games.module';
 import { RolesModule } from './roles/roles.module';
-
-import { UserEntity } from './user/entity/user.entity';
-import { GameEntity } from './games/entity/game.entity';
-import { GamePurchaseEntity } from './billing/entity/game-purchase.entity';
-import { UserPrivateEntity } from './user/entity/user-private.entity';
-
-import { BillingController } from './billing/billing.controller';
-import { BillingService } from './billing/billing.service';
 import { BillingModule } from './billing/billing.module';
+
+import { typeOrmAsyncConfig } from '../config/typeorm.config';
 
 @Module({
   imports: [
@@ -25,20 +20,13 @@ import { BillingModule } from './billing/billing.module';
     UserModule,
     GamesModule,
     RolesModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'postgres',
-      database: 'test_nest',
-      entities: [UserEntity, UserPrivateEntity, GameEntity, GamePurchaseEntity],
-      synchronize: true,
-      dropSchema: true,
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
+    TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
     BillingModule,
   ],
-  controllers: [AppController, BillingController],
-  providers: [AppService, BillingService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

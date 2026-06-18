@@ -46,7 +46,8 @@ export class GamesController {
   @ApiResponse({
     status: 201,
     description: 'Successfully retrieved games',
-    type: Promise<GameEntity[]>,
+    type: GameEntity,
+    isArray: true,
   })
   @Get()
   @Public()
@@ -61,7 +62,7 @@ export class GamesController {
   @ApiResponse({
     status: 201,
     description: 'Successfully retreived game',
-    type: Promise<GameEntity>,
+    type: GameEntity,
   })
   @Get(':id')
   @Public()
@@ -88,11 +89,11 @@ export class GamesController {
   })
   @Post()
   @Roles([Role.ROLE_ADMIN, Role.ROLE_PUBLISHER])
-  create(
+  async create(
     @ActiveSession() user: UserSession,
     @Body(new ValidationPipe()) createGameDto: CreateGameDTO,
   ) {
-    return this.gamesService.create(user.userid, createGameDto);
+    return await this.gamesService.create(user.userid, createGameDto);
   }
 
   // POST /game/id
