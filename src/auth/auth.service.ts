@@ -3,7 +3,10 @@ import { Request, Response } from 'express';
 
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+
 import { UserService } from '../user/user.service';
+
 import { UserPrivateEntity } from '../user/entity/user-private.entity';
 import { UserSession } from '../core/decorators/activeSession.decorator';
 import { LoginUserResponseDTO } from '../core/dto/login-user.dto';
@@ -14,6 +17,9 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
   ) {}
+
+  configService: ConfigService = new ConfigService();
+  THIRTYDAYS: number = 30 * 24 * 60 * 60 * 1000;
 
   async login(
     username: string,
@@ -49,16 +55,17 @@ export class AuthService {
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow<string>('JWT_SECRET'),
       expiresIn: '10m',
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: 'REFRESH_SECRET',
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
       expiresIn: '30d',
     });
 
     res.cookie('refresh-token', refreshToken, {
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 jours en ms
+      maxAge: this.THIRTYDAYS,
       httpOnly: false, // DEBUG only, set to TRUE on prod
     });
 
@@ -78,7 +85,7 @@ export class AuthService {
     const payload: UserSession = await this.jwtService.verifyAsync(
       refresh_token,
       {
-        secret: 'REFRESH_SECRET',
+        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
       },
     );
 
@@ -94,7 +101,9 @@ export class AuthService {
 
     req['user'] = newPayload;
 
-    const accessToken = await this.jwtService.signAsync(newPayload);
+    const accessToken = await this.jwtService.signAsync(newPayload, {
+      secret: this.configService.getOrThrow<string>('JWT_SECRET'),
+    });
 
     return {
       access_token: accessToken,

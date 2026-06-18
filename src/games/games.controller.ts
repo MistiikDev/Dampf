@@ -4,7 +4,6 @@ import {
   Param,
   Post,
   Body,
-  Request,
   Patch,
   ParseIntPipe,
   ValidationPipe,

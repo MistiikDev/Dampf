@@ -8,7 +8,6 @@ import {
 
 import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 
 import { Role } from './roles.enum';
 import { Roles } from '../core/decorators/roles.decorator';
@@ -17,7 +16,6 @@ import { Roles } from '../core/decorators/roles.decorator';
 export class RolesGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private jwtService: JwtService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
