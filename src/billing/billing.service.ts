@@ -33,10 +33,6 @@ export class BillingService {
       gameid: purchaseDTO.productid,
     });
 
-    if (!user || !game) {
-      throw new BadRequestException('Error while processing purchase');
-    }
-
     const userPrivate: UserPrivateEntity = user.private;
 
     if (game.retail_price > userPrivate.balance) {

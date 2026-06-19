@@ -37,6 +37,7 @@ import {
   UserSession,
 } from '../core/decorators/activeSession.decorator';
 import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
+import { UserEntityResponseDTO } from '../core/dto/user-entity.dto';
 
 @Controller('user')
 export class UserController {
@@ -49,7 +50,7 @@ export class UserController {
   @ApiResponse({
     status: 201,
     description: 'Successfully fetched all users',
-    type: UserEntity,
+    type: UserEntityResponseDTO,
     isArray: true,
   })
   @ApiForbiddenResponse({
@@ -90,7 +91,7 @@ export class UserController {
   @ApiResponse({
     status: 201,
     description: 'Successfully fetched user from his USERID',
-    type: UserEntity,
+    type: UserEntityResponseDTO,
   })
   @ApiForbiddenResponse({
     description: 'User must be logged in to fetch all users',

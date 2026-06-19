@@ -110,7 +110,9 @@ export class UserService extends GenericService<UserEntity> {
       await this.userRepository.save(user);
       await this.userPrivateRepository.save(userPrivate);
 
-      return updateUserDto;
+      const { password: _pass, ...safeResponse } = updateUserDto;
+
+      return safeResponse as UpdateUserDto;
     } catch {
       throw new InternalServerErrorException('Could not save user data');
     }
