@@ -18,8 +18,8 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  configService: ConfigService = new ConfigService();
-  THIRTYDAYS: number = 30 * 24 * 60 * 60 * 1000;
+  private readonly configService: ConfigService = new ConfigService();
+  private readonly THIRTYDAYS: number = 30 * 24 * 60 * 60 * 1000;
 
   async login(
     username: string,
