@@ -28,11 +28,12 @@ import {
 import { UpdateGameDTO } from '../core/dto/update-game.dto';
 
 import { GamesService } from './games.service';
-import { GameEntity } from './entity/game.entity';
+
 import {
   ActiveSession,
   UserSession,
 } from '../core/decorators/activeSession.decorator';
+import { GameEntityResponseDTO } from '../core/dto/game-entity.dto';
 
 @Controller('games')
 export class GamesController {
@@ -45,7 +46,7 @@ export class GamesController {
   @ApiResponse({
     status: 201,
     description: 'Successfully retrieved games',
-    type: GameEntity,
+    type: GameEntityResponseDTO,
     isArray: true,
   })
   @Get()
@@ -61,7 +62,7 @@ export class GamesController {
   @ApiResponse({
     status: 201,
     description: 'Successfully retreived game',
-    type: GameEntity,
+    type: GameEntityResponseDTO,
   })
   @Get(':id')
   @Public()

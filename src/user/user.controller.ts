@@ -141,7 +141,6 @@ export class UserController {
     type: UpdateUserDto,
   })
   @Patch()
-  @Roles([Role.ROLE_PLAYER])
   async update(
     @ActiveSession() user: UserSession,
     @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
@@ -186,7 +185,6 @@ export class UserController {
     description: 'User must be logged in to execute command',
   })
   @Delete()
-  @Roles([Role.ROLE_PLAYER])
   async delete(@ActiveSession() user: UserSession) {
     return await this.userService.deleteFromProprety({ userid: user.userid });
   }

@@ -27,6 +27,12 @@ export class UserPrivateEntity {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  refresh_token: string;
+
+  @Column({ type: 'text', nullable: true, array: true })
+  refresh_token_blacklist: string[];
+
   @OneToOne(() => UserEntity, (user) => user.private, {
     cascade: true,
     onDelete: 'CASCADE',

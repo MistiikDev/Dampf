@@ -13,6 +13,6 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
     database: config.getOrThrow<string>('DATABASE_NAME'),
 
     autoLoadEntities: true,
-    synchronize: true,
+    synchronize: false,
   }),
 };

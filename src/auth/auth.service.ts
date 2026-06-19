@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -29,6 +30,7 @@ export class AuthService {
   async login(
     username: string,
     password: string,
+    req: Request,
     res: Response,
   ): Promise<{ access_token: string }> {
     const user = await this.userService.findEntry(
@@ -67,6 +69,22 @@ export class AuthService {
       expiresIn: '30d',
     });
 
+    // If user already has a refresh token in use, black list it and regenerate one
+    const refToken = req.cookies['refresh-token'];
+
+    if (refToken) {
+      if (userPrivate.refresh_token_blacklist != null) {
+        userPrivate.refresh_token_blacklist.push(refToken);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        userPrivate.refresh_token_blacklist = [refToken];
+      }
+
+      await this.userService.savePrivateItem(userPrivate);
+    }
+
+    userPrivate.refresh_token = refreshToken;
+
     res.cookie('refresh-token', refreshToken, {
       maxAge: this.THIRTYDAYS,
       httpOnly: false, // DEBUG only, set to TRUE on prod
@@ -92,9 +110,20 @@ export class AuthService {
       },
     );
 
-    const freshUser = await this.userService.findEntry({
-      userid: payload.userid,
-    });
+    const freshUser = await this.userService.findEntry(
+      {
+        userid: payload.userid,
+      },
+      { private: true },
+    );
+
+    if (freshUser.private.refresh_token !== refresh_token) {
+      throw new UnauthorizedException('Token do not match with user');
+    }
+
+    if (freshUser.private.refresh_token_blacklist?.includes(refresh_token)) {
+      throw new UnauthorizedException('Token is expired');
+    }
 
     const newPayload: UserSession = {
       userid: freshUser.userid,

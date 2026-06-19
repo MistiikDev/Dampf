@@ -37,12 +37,14 @@ export class AuthController {
   @Post('login')
   @Public()
   login(
+    @Req() req: express.Request,
     @Res({ passthrough: true }) res: express.Response,
     @Body() loginUserDTO: LoginUserDTO,
   ) {
     return this.authService.login(
       loginUserDTO.username,
       loginUserDTO.password,
+      req,
       res,
     );
   }
