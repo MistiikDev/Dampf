@@ -15,7 +15,7 @@ export const ActiveSession = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
     const req: Request = ctx.switchToHttp().getRequest();
     const userSession: UserSession = req['user'];
-    
+
     if (!userSession) {
       throw new UnauthorizedException(
         'An active session is required to access endpoint',

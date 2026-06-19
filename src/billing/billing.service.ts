@@ -1,16 +1,14 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
-
-import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
-import { UserService } from '../user/user.service';
-import { GamesService } from '../games/games.service';
-import { UserPrivateEntity } from '../user/entity/user-private.entity';
-import { GamePurchaseEntity } from './entity/game-purchase.entity';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
+import { UserService } from '../user/user.service';
+import { UserPrivateEntity } from '../user/entity/user-private.entity';
+
+import { GamesService } from '../games/games.service';
+import { GamePurchaseEntity } from './entity/game-purchase.entity';
+
+import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
 import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
 
 @Injectable()

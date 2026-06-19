@@ -10,8 +10,9 @@ import { UpdateGameDTO } from '../core/dto/update-game.dto';
 
 import { GameEntity } from './entity/game.entity';
 import { UserService } from '../user/user.service';
-import { Role } from '../roles/roles.enum';
 import { GenericService } from '../core/generics/generic.service';
+
+import { Role } from '../roles/roles.enum';
 
 @Injectable()
 export class GamesService extends GenericService<GameEntity> {
