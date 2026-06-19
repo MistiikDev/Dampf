@@ -1,7 +1,12 @@
 import * as bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -36,16 +41,14 @@ export class AuthService {
     );
 
     if (!user) {
-      throw new HttpException(
-        `User ${username} does not exist`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException(`User ${username} does not exist`);
     }
 
     const userPrivate: UserPrivateEntity = user.private;
+
     const isMatch = await bcrypt.compare(password, userPrivate.password);
     if (!isMatch) {
-      throw new HttpException(`Credentials error`, HttpStatus.FORBIDDEN);
+      throw new ForbiddenException(`Credentials error`);
     }
 
     const payload = {
@@ -79,7 +82,7 @@ export class AuthService {
     const refresh_token = req.cookies['refresh-token'];
 
     if (!refresh_token) {
-      throw new HttpException('Cannot read cookie', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('Cannot read cookie');
     }
 
     const payload: UserSession = await this.jwtService.verifyAsync(

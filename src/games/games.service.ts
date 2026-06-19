@@ -1,4 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotAcceptableException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -28,9 +32,8 @@ export class GamesService extends GenericService<GameEntity> {
     const user = await this.userService.findEntry({ userid: userid });
 
     if (user.role === Role.ROLE_PLAYER) {
-      throw new HttpException(
+      throw new ForbiddenException(
         'Publisher ID must point to a valid user with PUBLISHER permissions',
-        HttpStatus.FORBIDDEN,
       );
     }
 
@@ -51,10 +54,7 @@ export class GamesService extends GenericService<GameEntity> {
       return response;
     } catch {
       // 99% a duplicate issue with TITLE { unique: true }
-      throw new HttpException(
-        'Game must be original!',
-        HttpStatus.NOT_ACCEPTABLE,
-      );
+      throw new NotAcceptableException('Game must be original!');
     }
   }
 

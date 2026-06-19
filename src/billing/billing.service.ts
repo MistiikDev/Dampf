@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -34,17 +34,16 @@ export class BillingService {
     });
 
     if (!user || !game) {
-      throw new HttpException(
-        'Error while processing purchase',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('Error while processing purchase');
     }
 
     const userPrivate: UserPrivateEntity = user.private;
 
     if (game.retail_price > userPrivate.balance) {
       throw new HttpException(
-        'Balance insufficient',
+        {
+          message: 'Balance insufficient',
+        },
         HttpStatus.PAYMENT_REQUIRED,
       );
     }
