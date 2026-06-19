@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -78,6 +83,13 @@ export class BillingService {
     giftCardId: number,
   ): Promise<GenericSuccessResponseDTO> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    if (
+      giftCardId == null ||
+      !Object.keys(this.giftCardIdToBalance).includes(giftCardId.toString())
+    ) {
+      throw new BadRequestException('Gift Card ID is not recognized');
+    }
+
     const giftCardAmount = this.giftCardIdToBalance[giftCardId];
 
     /*

@@ -70,10 +70,16 @@ export class AuthService {
     });
 
     // If user already has a refresh token in use, black list it and regenerate one
-    const refToken = req.cookies['refresh_token'];
+    const refToken = req.cookies['refresh-token'];
 
     if (refToken) {
-      userPrivate.refresh_token_blacklist.push(refToken);
+      if (userPrivate.refresh_token_blacklist != null) {
+        userPrivate.refresh_token_blacklist.push(refToken);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        userPrivate.refresh_token_blacklist = [refToken];
+      }
+
       await this.userService.savePrivateItem(userPrivate);
     }
 
@@ -111,11 +117,11 @@ export class AuthService {
       { private: true },
     );
 
-    if (freshUser.private.refresh_token != refresh_token) {
+    if (freshUser.private.refresh_token !== refresh_token) {
       throw new UnauthorizedException('Token do not match with user');
     }
 
-    if (freshUser.private.refresh_token_blacklist.includes(refresh_token)) {
+    if (freshUser.private.refresh_token_blacklist?.includes(refresh_token)) {
       throw new UnauthorizedException('Token is expired');
     }
 

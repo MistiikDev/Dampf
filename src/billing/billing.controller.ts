@@ -83,7 +83,7 @@ export class BillingController {
   @ApiForbiddenResponse({
     description: 'You need to be logged in to check your balance',
   })
-  @Get('balance/recharge/:giftCardId')
+  @Post('balance/recharge/:giftCardId')
   async rechargeBalance(
     @ActiveSession() user: UserSession,
     @Param('giftCardId', ParseIntPipe) giftCardId: number,
