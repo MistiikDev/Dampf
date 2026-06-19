@@ -1,6 +1,12 @@
 import * as bcrypt from 'bcrypt';
 
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotAcceptableException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -57,10 +63,7 @@ export class UserService extends GenericService<UserEntity> {
     try {
       await this.userPrivateRepository.save(userPrivate);
     } catch {
-      throw new HttpException(
-        'User is already registered!',
-        HttpStatus.CONFLICT,
-      );
+      throw new ConflictException('User is already registered!');
     }
 
     await this.saveItem(userPublic);
@@ -80,28 +83,38 @@ export class UserService extends GenericService<UserEntity> {
     */
 
     if (!updateUserDto || Object.keys(updateUserDto).length === 0) {
-      throw new HttpException('No payload sent', HttpStatus.NOT_ACCEPTABLE);
+      throw new NotAcceptableException('No payload sent');
     }
 
-    const user = await this.findEntry({ userid: userid });
+    const user = await this.findEntry({ userid: userid }, { private: true });
     const userPrivate = user.private;
+
+    Object.assign(user, updateUserDto);
+
+    // Check if there is a password change, if there is hash it.
+    if (updateUserDto.password) {
+      const hashSecret: number = parseInt(
+        this.configService.getOrThrow<string>('HASH_SECRET'),
+      );
+
+      updateUserDto.password = await bcrypt.hash(
+        updateUserDto.password,
+        hashSecret,
+      );
+    }
+
+    Object.assign(userPrivate, updateUserDto);
 
     // Update both entries
     try {
-      Object.assign(user, updateUserDto);
-      Object.assign(userPrivate, updateUserDto);
-
-      console.log(userPrivate, user, updateUserDto);
-
       await this.userRepository.save(user);
       await this.userPrivateRepository.save(userPrivate);
 
-      return updateUserDto;
+      const { password: _pass, ...safeResponse } = updateUserDto;
+
+      return safeResponse as UpdateUserDto;
     } catch {
-      throw new HttpException(
-        'Could not save user data',
-        HttpStatus.FAILED_DEPENDENCY,
-      );
+      throw new InternalServerErrorException('Could not save user data');
     }
   }
 
@@ -109,9 +122,8 @@ export class UserService extends GenericService<UserEntity> {
   async givePublisherRights(userid: string) {
     const user = await this.findEntry({ userid: userid });
     if (user.role != Role.ROLE_PLAYER) {
-      throw new HttpException(
+      throw new BadRequestException(
         'Specified user already has publishing rights',
-        HttpStatus.BAD_REQUEST,
       );
     }
     try {
@@ -122,9 +134,8 @@ export class UserService extends GenericService<UserEntity> {
         success: true,
       };
     } catch {
-      throw new HttpException(
+      throw new InternalServerErrorException(
         'Internal error while escalating user rights',
-        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -143,10 +154,7 @@ export class UserService extends GenericService<UserEntity> {
     userPrivate.balance += balanceChange;
 
     await this.userPrivateRepository.save(userPrivate).catch(() => {
-      throw new HttpException(
-        'Could not save user internal data',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('Could not save user internal data');
     });
 
     return true;

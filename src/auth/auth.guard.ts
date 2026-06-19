@@ -1,8 +1,6 @@
 import {
   CanActivate,
   ExecutionContext,
-  HttpException,
-  HttpStatus,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -35,22 +33,19 @@ export class AuthGuard implements CanActivate {
       const token: string | undefined = this.extractTokenFromHeader(request);
 
       if (token != undefined) {
-        const payload = await this.jwtService.verifyAsync(token)
-          .catch((err) => {
-            if (err instanceof TokenExpiredError) {
-              console.log('expired');
-              throw new HttpException('Token expired', HttpStatus.UNAUTHORIZED);
-            }
-          });
-
+        const payload = await this.jwtService.verifyAsync(token);
         request['user'] = payload;
       } else {
         return false;
       }
 
       return true;
-    } catch {
-      throw new UnauthorizedException();
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        throw new UnauthorizedException('Token expired');
+      }
+
+      throw new UnauthorizedException('Invalid token');
     }
   }
 

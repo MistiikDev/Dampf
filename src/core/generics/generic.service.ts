@@ -6,7 +6,7 @@ import {
   ObjectLiteral,
   Repository,
 } from 'typeorm';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 export abstract class GenericService<T extends ObjectLiteral> {
   protected configService: ConfigService;
@@ -29,7 +29,7 @@ export abstract class GenericService<T extends ObjectLiteral> {
     });
 
     if (!entity) {
-      throw new HttpException('Could not find object', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('Could not find object');
     }
 
     return entity;
@@ -38,13 +38,11 @@ export abstract class GenericService<T extends ObjectLiteral> {
   async deleteFromProprety(
     findOptsWhere: FindOptionsWhere<T>,
   ): Promise<DeleteResult> {
-    const entity = await this.findEntry(findOptsWhere);
-
-    return await this.deleteEntry(entity);
+    return await this.repository.delete(findOptsWhere);
   }
 
   async deleteEntry(entity: T) {
-    return await this.repository.delete(entity);
+    return await this.repository.remove(entity);
   }
 
   async saveItem(entity: T): Promise<T> {
