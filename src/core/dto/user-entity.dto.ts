@@ -15,4 +15,10 @@ export class UserEntityResponseDTO {
       ' Array of Game Objects that the user owns | NULL on GET/user ',
   })
   ownedGames: any[];
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
 }

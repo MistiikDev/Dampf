@@ -28,9 +28,10 @@ describe('AuthService', () => {
     it('Should return 404 if user is not found', async () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
       mockUserService.findEntry.mockResolvedValue(null);
-      const result = await service.login('userDoesNotExist', 'x', mockResponse);
 
-      await expect(result).rejects.toThrow(HttpException);
+      await expect(
+        service.login('userDoesNotExist', 'x', mockResponse),
+      ).rejects.toThrow(HttpException);
     });
   });
 });

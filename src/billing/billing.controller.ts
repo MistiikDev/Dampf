@@ -1,4 +1,12 @@
-import { Controller, Post, Body, ValidationPipe, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  ValidationPipe,
+  Get,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -17,6 +25,7 @@ import {
   UserSession,
 } from '../core/decorators/activeSession.decorator';
 import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
+import { BalanceResponseDTO } from '../core/dto/balance.dto';
 
 @Controller('billing')
 export class BillingController {
@@ -52,16 +61,36 @@ export class BillingController {
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved balance',
-    type: UserSession,
+    type: BalanceResponseDTO,
   })
   @ApiForbiddenResponse({
     description: 'You need to be logged in to check your balance',
   })
   @Get('balance')
-  getBalance(@ActiveSession() user: UserSession) {
-    return user;
+  async getBalance(@ActiveSession() user: UserSession) {
+    return await this.billingService.getUserBalance(user.userid);
   }
 
   // POST /billing/balance/recharge
   // RECHARGE BALANCE FOR CURRENT LOGGED USER
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ description: 'Recharge your balance' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully recharged balance',
+    type: GenericSuccessResponseDTO,
+  })
+  @ApiForbiddenResponse({
+    description: 'You need to be logged in to check your balance',
+  })
+  @Get('balance/recharge/:giftCardId')
+  async rechargeBalance(
+    @ActiveSession() user: UserSession,
+    @Param('giftCardId', ParseIntPipe) giftCardId: number,
+  ) {
+    return await this.billingService.rechargeUserBalance(
+      user.userid,
+      giftCardId,
+    );
+  }
 }

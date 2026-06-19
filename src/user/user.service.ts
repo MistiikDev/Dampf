@@ -33,6 +33,12 @@ export class UserService extends GenericService<UserEntity> {
     super(userRepository);
   }
 
+  async savePrivateItem(
+    userPrivate: UserPrivateEntity,
+  ): Promise<UserPrivateEntity> {
+    return await this.userPrivateRepository.save(userPrivate);
+  }
+
   async create(user: CreateUserDto) {
     /*
     User Object is separated into 2 entites
@@ -61,7 +67,7 @@ export class UserService extends GenericService<UserEntity> {
     userPrivate.password = await bcrypt.hash(user.password, hashSecret);
 
     try {
-      await this.userPrivateRepository.save(userPrivate);
+      await this.savePrivateItem(userPrivate);
     } catch {
       throw new ConflictException('User is already registered!');
     }
@@ -107,8 +113,8 @@ export class UserService extends GenericService<UserEntity> {
 
     // Update both entries
     try {
-      await this.userRepository.save(user);
-      await this.userPrivateRepository.save(userPrivate);
+      await this.saveItem(user);
+      await this.savePrivateItem(userPrivate);
 
       const { password: _pass, ...safeResponse } = updateUserDto;
 
@@ -128,7 +134,7 @@ export class UserService extends GenericService<UserEntity> {
     }
     try {
       user.role = Role.ROLE_PUBLISHER;
-      await this.userRepository.save(user);
+      await this.saveItem(user);
 
       return {
         success: true,
@@ -153,8 +159,8 @@ export class UserService extends GenericService<UserEntity> {
 
     userPrivate.balance += balanceChange;
 
-    await this.userPrivateRepository.save(userPrivate).catch(() => {
-      throw new BadRequestException('Could not save user internal data');
+    await this.savePrivateItem(userPrivate).catch(() => {
+      throw new BadRequestException('Error while recharging user balance');
     });
 
     return true;

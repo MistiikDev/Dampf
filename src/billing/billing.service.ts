@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -10,6 +10,7 @@ import { GamePurchaseEntity } from './entity/game-purchase.entity';
 
 import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
 import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
+import { BalanceResponseDTO } from '../core/dto/balance.dto';
 
 @Injectable()
 export class BillingService {
@@ -20,6 +21,14 @@ export class BillingService {
     private userService: UserService,
     private gameService: GamesService,
   ) {}
+
+  private readonly giftCardIdToBalance = {
+    1: 5,
+    2: 10,
+    3: 20,
+    4: 50,
+    5: 100,
+  };
 
   async processPurchase(
     userid: string,
@@ -61,6 +70,38 @@ export class BillingService {
 
     return {
       success: true,
+    };
+  }
+
+  async rechargeUserBalance(
+    userid: string,
+    giftCardId: number,
+  ): Promise<GenericSuccessResponseDTO> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const giftCardAmount = this.giftCardIdToBalance[giftCardId];
+
+    /*
+      Process Payment Method, confirmation, security ... here
+    */
+
+    const isSuccess = await this.userService.addUserBalance(
+      userid,
+      giftCardAmount,
+    );
+
+    return {
+      success: isSuccess,
+    };
+  }
+
+  async getUserBalance(userid: string): Promise<BalanceResponseDTO> {
+    const user = await this.userService.findEntry(
+      { userid: userid },
+      { private: true },
+    );
+
+    return {
+      balance: user.private.balance,
     };
   }
 }

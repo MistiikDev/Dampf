@@ -1,18 +1,23 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
+import { HttpException } from '@nestjs/common';
 
 describe('UserService', () => {
   let service: UserService;
+  let mockUserRepo: any;
+  let mockUserPrivateRepo: any;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [UserService],
-    }).compile();
+  beforeEach(() => {
+    mockUserRepo = {
+      save: jest.fn(),
+    };
 
-    service = module.get<UserService>(UserService);
+    mockUserPrivateRepo = {
+      save: jest.fn(),
+    };
+    service = new UserService(mockUserRepo, mockUserPrivateRepo);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('Cannot save if user email already is registered', async () => {
+
   });
 });
