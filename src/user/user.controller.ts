@@ -106,7 +106,7 @@ export class UserController {
   ): Promise<UserEntity | null> {
     return await this.userService.findEntry(
       { userid: id },
-      { ownedGames: { game: true } },
+      { ownedGames: { game: true }, private: true },
     );
   }
 

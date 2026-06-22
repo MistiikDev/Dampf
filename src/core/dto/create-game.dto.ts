@@ -22,17 +22,6 @@ export class CreateGameDTO {
   @IsNumber()
   @IsNotEmpty()
   retail_price: number;
-
-  @ApiProperty({
-    description: 'Publisher of the game, must point to a valid USERID',
-    example: 1,
-  })
-  @IsNumber()
-  @IsNotEmpty({
-    message:
-      'Publisher ID must point to a valid user id with publishing rights!',
-  })
-  publisher_id: number;
 }
 
 export class CreateGameResponseDTO {
