@@ -48,7 +48,7 @@ export class GamesService extends GenericService<GameEntity> {
 
       const response: CreateGameResponseDTO = {
         gameid: savedGame.gameid,
-        publisherid: savedGame.publisher.userid,
+        publisherid: userid,
       };
 
       return response;

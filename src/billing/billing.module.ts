@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GamePurchaseEntity } from './entity/game-purchase.entity';
 import { BillingService } from './billing.service';
 import { BillingController } from './billing.controller';
 import { GamesModule } from '../games/games.module';
 import { UserModule } from '../user/user.module';
+import { BillingMiddleware } from './billing.middleware';
 
 @Module({
   imports: [
@@ -16,4 +17,8 @@ import { UserModule } from '../user/user.module';
   providers: [BillingService],
   exports: [BillingService],
 })
-export class BillingModule {}
+export class BillingModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(BillingMiddleware).forRoutes('billing/purchase');
+  }
+}
