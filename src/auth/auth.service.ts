@@ -1,11 +1,10 @@
 import * as bcrypt from 'bcrypt';
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -15,7 +14,7 @@ import { UserService } from '../user/user.service';
 
 import { UserPrivateEntity } from '../user/entity/user-private.entity';
 import { UserSession } from '../core/decorators/activeSession.decorator';
-import { LoginUserResponseDTO } from '../core/dto/login-user.dto';
+import { LoginUserResponseDTO } from './dto/login-user.dto';
 import { UserEntity } from '../user/entity/user.entity';
 import * as timeString from 'ms';
 

@@ -6,7 +6,6 @@ import {
   Body,
   Patch,
   ParseIntPipe,
-  ValidationPipe,
 } from '@nestjs/common';
 
 import {
@@ -21,11 +20,8 @@ import { Public } from '../core/decorators/ispublic.decorator';
 import { Roles } from '../core/decorators/roles.decorator';
 import { Role } from '../roles/roles.enum';
 
-import {
-  CreateGameDTO,
-  CreateGameResponseDTO,
-} from '../core/dto/create-game.dto';
-import { UpdateGameDTO } from '../core/dto/update-game.dto';
+import { CreateGameDTO, CreateGameResponseDTO } from './dto/create-game.dto';
+import { UpdateGameDTO } from './dto/update-game.dto';
 
 import { GamesService } from './games.service';
 
@@ -33,7 +29,7 @@ import {
   ActiveSession,
   UserSession,
 } from '../core/decorators/activeSession.decorator';
-import { GameEntityResponseDTO } from '../core/dto/game-entity.dto';
+import { GameEntityResponseDTO } from './dto/game-entity.dto';
 
 @Controller('games')
 export class GamesController {
@@ -91,7 +87,7 @@ export class GamesController {
   @Roles([Role.ROLE_ADMIN, Role.ROLE_PUBLISHER])
   async create(
     @ActiveSession() user: UserSession,
-    @Body(new ValidationPipe()) createGameDto: CreateGameDTO,
+    @Body() createGameDto: CreateGameDTO,
   ) {
     return await this.gamesService.create(user.userid, createGameDto);
   }
@@ -118,7 +114,7 @@ export class GamesController {
   update(
     @ActiveSession() user: UserSession,
     @Param('id', ParseIntPipe) gameid: number,
-    @Body(new ValidationPipe()) updateGameDto: UpdateGameDTO,
+    @Body() updateGameDto: UpdateGameDTO,
   ) {
     return this.gamesService.update(user.userid, gameid, updateGameDto);
   }

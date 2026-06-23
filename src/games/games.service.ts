@@ -2,11 +2,8 @@ import { Injectable, NotAcceptableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import {
-  CreateGameDTO,
-  CreateGameResponseDTO,
-} from '../core/dto/create-game.dto';
-import { UpdateGameDTO } from '../core/dto/update-game.dto';
+import { CreateGameDTO, CreateGameResponseDTO } from './dto/create-game.dto';
+import { UpdateGameDTO } from './dto/update-game.dto';
 
 import { GameEntity } from './entity/game.entity';
 import { UserService } from '../user/user.service';

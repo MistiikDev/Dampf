@@ -10,13 +10,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import {
-  CreateUserDto,
-  CreateUserResponseDTO,
-} from '../core/dto/create-user.dto';
+import { CreateUserDto, CreateUserResponseDTO } from './dto/create-user.dto';
 import { Role } from '../roles/roles.enum';
 import { UserEntity } from './entity/user.entity';
-import { UpdateUserDto } from '../core/dto/update-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserPrivateEntity } from './entity/user-private.entity';
 
 import { GenericService } from '../core/generics/generic.service';

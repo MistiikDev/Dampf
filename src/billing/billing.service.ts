@@ -8,14 +8,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { UserService } from '../user/user.service';
-import { UserPrivateEntity } from '../user/entity/user-private.entity';
 
 import { GamesService } from '../games/games.service';
 import { GamePurchaseEntity } from './entity/game-purchase.entity';
 
-import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
-import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
-import { BalanceResponseDTO } from '../core/dto/balance.dto';
+import { CreatePurchaseDTO } from './dto/purchase.dto';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
+import { BalanceResponseDTO } from './dto/balance.dto';
 import { GameEntity } from '../games/entity/game.entity';
 import { UserEntity } from '../user/entity/user.entity';
 
