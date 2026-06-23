@@ -9,7 +9,7 @@ import { Request } from 'express';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 
-import { Public } from '../core/decorators/ispublic.decorator';
+import { Public } from '../decorators/ispublic.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

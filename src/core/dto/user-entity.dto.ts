@@ -2,23 +2,23 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UserEntityResponseDTO {
   @ApiProperty()
-  userid: string;
+  readonly userid: string;
 
   @ApiProperty()
-  username: string;
+  readonly username: string;
 
   @ApiProperty()
-  role: string;
+  readonly role: string;
 
   @ApiProperty({
     description:
       ' Array of Game Objects that the user owns | NULL on GET/user ',
   })
-  ownedGames: any[];
+  readonly ownedGames: any[];
 
   @ApiProperty()
-  createdAt: Date;
+  readonly createdAt: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  readonly updatedAt: Date;
 }

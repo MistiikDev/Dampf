@@ -2,20 +2,20 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class GameEntityResponseDTO {
   @ApiProperty()
-  gameid: number;
+  readonly gameid: number;
 
   @ApiProperty()
-  title: string;
+  readonly title: string;
 
   @ApiProperty()
-  description: string;
+  readonly description: string;
 
   @ApiProperty()
-  retail_price: number;
+  readonly retail_price: number;
 
   @ApiProperty()
-  createdAt: Date;
+  readonly createdAt: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  readonly updatedAt: Date;
 }

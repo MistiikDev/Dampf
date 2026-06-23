@@ -16,6 +16,8 @@ import { GamePurchaseEntity } from './entity/game-purchase.entity';
 import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
 import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
 import { BalanceResponseDTO } from '../core/dto/balance.dto';
+import { GameEntity } from '../games/entity/game.entity';
+import { UserEntity } from '../user/entity/user.entity';
 
 @Injectable()
 export class BillingService {
@@ -35,6 +37,22 @@ export class BillingService {
     5: 100,
   };
 
+  checkUserBalanceForPurchaseOrThrow(
+    user: UserEntity,
+    game: GameEntity,
+  ): boolean {
+    if (game.retail_price > user.private.balance) {
+      throw new HttpException(
+        {
+          message: 'Balance insufficient',
+        },
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
+
+    return true;
+  }
+
   async processPurchase(
     userid: string,
     purchaseDTO: CreatePurchaseDTO,
@@ -47,16 +65,7 @@ export class BillingService {
       gameid: purchaseDTO.productid,
     });
 
-    const userPrivate: UserPrivateEntity = user.private;
-
-    if (game.retail_price > userPrivate.balance) {
-      throw new HttpException(
-        {
-          message: 'Balance insufficient',
-        },
-        HttpStatus.PAYMENT_REQUIRED,
-      );
-    }
+    this.checkUserBalanceForPurchaseOrThrow(user, game);
 
     const GamePurchase = new GamePurchaseEntity();
     GamePurchase.user = user;
@@ -65,12 +74,8 @@ export class BillingService {
 
     await this.userService.addUserBalance(user.userid, -game.retail_price);
 
-    // TRY to set game to user db
-    // THEN retract price from user balance
-
     await this.userService.saveItem(user);
     await this.gameService.saveItem(game);
-
     await this.userGamePurchaseRepository.save(GamePurchase);
 
     return {
@@ -96,13 +101,8 @@ export class BillingService {
       Process Payment Method, confirmation, security ... here
     */
 
-    const isSuccess = await this.userService.addUserBalance(
-      userid,
-      giftCardAmount,
-    );
-
     return {
-      success: isSuccess,
+      success: await this.userService.addUserBalance(userid, giftCardAmount),
     };
   }
 

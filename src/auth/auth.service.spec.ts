@@ -5,6 +5,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let mockUserService: any;
   let mockJwtService: any;
+  let mockRequest: any;
   let mockResponse: any;
 
   beforeEach(() => {
@@ -18,6 +19,7 @@ describe('AuthService', () => {
       signAsync: jest.fn(),
     };
 
+    mockRequest = {};
     mockResponse = {};
 
     service = new AuthService(mockUserService, mockJwtService);
@@ -30,7 +32,7 @@ describe('AuthService', () => {
       mockUserService.findEntry.mockResolvedValue(null);
 
       await expect(
-        service.login('userDoesNotExist', 'x', mockResponse),
+        service.login('userDoesNotExist', 'x', mockRequest, mockResponse),
       ).rejects.toThrow(HttpException);
     });
   });

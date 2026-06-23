@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotAcceptableException,
-} from '@nestjs/common';
+import { Injectable, NotAcceptableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -16,8 +12,6 @@ import { GameEntity } from './entity/game.entity';
 import { UserService } from '../user/user.service';
 import { GenericService } from '../core/generics/generic.service';
 
-import { Role } from '../roles/roles.enum';
-
 @Injectable()
 export class GamesService extends GenericService<GameEntity> {
   constructor(
@@ -30,18 +24,10 @@ export class GamesService extends GenericService<GameEntity> {
 
   async create(userid: string, createGameDTO: CreateGameDTO) {
     const user = await this.userService.findEntry({ userid: userid });
-
-    if (user.role === Role.ROLE_PLAYER) {
-      throw new ForbiddenException(
-        'Publisher ID must point to a valid user with PUBLISHER permissions',
-      );
-    }
-
-    const game = new GameEntity();
-    game.title = createGameDTO.title;
-    game.retail_price = createGameDTO.retail_price;
-    game.description = createGameDTO.description;
-    game.publisher = user;
+    const game = this.gameRepository.create({
+      ...createGameDTO,
+      publisher: user,
+    });
 
     try {
       const savedGame = await this.gameRepository.save(game);

@@ -74,7 +74,10 @@ export class BillingController {
   // POST /billing/balance/recharge
   // RECHARGE BALANCE FOR CURRENT LOGGED USER
   @ApiBearerAuth('access-token')
-  @ApiOperation({ description: 'Recharge your balance' })
+  @ApiOperation({
+    description:
+      'Recharge your balance - GiftCardIds range from 1 to 5 (5$ to 100$)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Successfully recharged balance',

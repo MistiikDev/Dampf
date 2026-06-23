@@ -18,17 +18,26 @@ export class GamePurchaseEntity {
   @Column()
   purchase_date: Date;
 
+  @Column({ default: 0 })
+  time_played_hours: number;
+
   @CreateDateColumn()
   created_at: Date;
 
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ManyToOne(() => GameEntity, (game) => game.owners)
+  @ManyToOne(() => GameEntity, (game) => game.owners, {
+    cascade: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({ foreignKeyConstraintName: 'game_purchased_id' })
   game: GameEntity;
 
-  @ManyToOne(() => UserEntity, (user) => user.ownedGames)
+  @ManyToOne(() => UserEntity, (user) => user.ownedGames, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ foreignKeyConstraintName: 'buyer_user_id' })
   user: UserEntity;
 }

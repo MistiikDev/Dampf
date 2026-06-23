@@ -7,5 +7,5 @@ export class CreatePurchaseDTO {
     example: '730',
   })
   @IsNotEmpty()
-  productid: number;
+  readonly productid: number;
 }

@@ -84,9 +84,30 @@ export class UserController {
     return await this.userService.givePublisherRights(user.userid);
   }
 
+  // GET /user/games
+  // RETURN A LIST OF OWNED GAMES
+  @ApiBearerAuth('access-token')
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully fetched user games',
+    type: UserEntityResponseDTO,
+  })
+  @ApiForbiddenResponse({
+    description: 'User must be logged in to fetch all users',
+  })
+  @ApiNotFoundResponse({
+    description: 'User does not exist',
+  })
+  @Get('games')
+  async getGames(@ActiveSession() user: UserSession) {
+    return this.userService.findEntry(
+      { userid: user.userid },
+      { ownedGames: { game: true } },
+    );
+  }
+
   // GET /user/id
   // RETURN USER INFO FROM USERID
-
   @ApiOperation({ summary: 'Get a user from his USERID' })
   @ApiResponse({
     status: 201,
@@ -94,7 +115,7 @@ export class UserController {
     type: UserEntityResponseDTO,
   })
   @ApiForbiddenResponse({
-    description: 'User must be logged in to fetch all users',
+    description: 'User must be logged in to fetch all user(s)',
   })
   @ApiNotFoundResponse({
     description: 'User does not exist',
@@ -104,10 +125,7 @@ export class UserController {
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<UserEntity | null> {
-    return await this.userService.findEntry(
-      { userid: id },
-      { ownedGames: { game: true }, private: true },
-    );
+    return await this.userService.findEntry({ userid: id }, { private: true });
   }
 
   // POST /user

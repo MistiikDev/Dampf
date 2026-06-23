@@ -68,11 +68,10 @@ export class UserService extends GenericService<UserEntity> {
 
     try {
       await this.savePrivateItem(userPrivate);
+      await this.saveItem(userPublic);
     } catch {
       throw new ConflictException('User is already registered!');
     }
-
-    await this.saveItem(userPublic);
 
     const userCreateResponse: CreateUserResponseDTO = {
       userid: userPublic.userid,
@@ -103,22 +102,21 @@ export class UserService extends GenericService<UserEntity> {
         this.configService.getOrThrow<string>('HASH_SECRET'),
       );
 
-      updateUserDto.password = await bcrypt.hash(
+      userPrivate.password = await bcrypt.hash(
         updateUserDto.password,
         hashSecret,
       );
     }
 
-    Object.assign(userPrivate, updateUserDto);
+    const { password, ...clearUpdateUserDto } = updateUserDto;
+    Object.assign(userPrivate, clearUpdateUserDto);
 
     // Update both entries
     try {
       await this.saveItem(user);
       await this.savePrivateItem(userPrivate);
 
-      const { password: _pass, ...safeResponse } = updateUserDto;
-
-      return safeResponse as UpdateUserDto;
+      return clearUpdateUserDto as UpdateUserDto;
     } catch {
       throw new InternalServerErrorException('Could not save user data');
     }

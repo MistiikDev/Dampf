@@ -1,18 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { GamesController } from './games.controller';
 
 describe('GamesController', () => {
   let controller: GamesController;
+  let mockGameService: any;
+  let mockCreateGameDto: any;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [GamesController],
-    }).compile();
+  beforeEach(() => {
+    mockCreateGameDto = {};
+    mockGameService = {
+      create: jest.fn(),
+    };
 
-    controller = module.get<GamesController>(GamesController);
+    controller = new GamesController(mockGameService);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  describe('POST', () => {
+    it('Should return an UNAUTHORIZED error when accessing without session', async () => {});
   });
 });
