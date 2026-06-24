@@ -42,7 +42,10 @@ export class GamesService extends GenericService<GameEntity> {
   }
 
   async update(userid: string, gameid: number, updateGameDto: UpdateGameDTO) {
-    const target_game = await this.findEntry({ gameid: gameid });
+    const target_game: GameEntity = await this.findEntry(
+      { gameid: gameid },
+      { publisher: true },
+    );
 
     // Only let user update if it is his OWN game
     if (userid == target_game?.publisher.userid) {

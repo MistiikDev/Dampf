@@ -1,6 +1,6 @@
 import {
   CanActivate,
-  ExecutionContext,
+  ExecutionContext, ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -36,7 +36,9 @@ export class AuthGuard implements CanActivate {
         const payload = await this.jwtService.verifyAsync(token);
         request['user'] = payload;
       } else {
-        return false;
+        throw new ForbiddenException(
+          'You need to be logged in to access this ressource',
+        );
       }
 
       return true;

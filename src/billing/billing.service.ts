@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -36,10 +37,22 @@ export class BillingService {
     5: 100,
   };
 
-  checkUserBalanceForPurchaseOrThrow(
-    user: UserEntity,
-    game: GameEntity,
-  ): boolean {
+  async checkUserAlreadyOwnsLicense(user: UserEntity, game: GameEntity) {
+    const doesExist: boolean = await this.userGamePurchaseRepository.exists({
+      where: {
+        user: { userid: user.userid },
+        game: { gameid: game.gameid },
+      },
+    });
+
+    if (doesExist) {
+      throw new ForbiddenException(
+        `${user.username} already owns a license for ${game.title}!`,
+      );
+    }
+  }
+
+  checkUserBalanceForPurchase(user: UserEntity, game: GameEntity): boolean {
     if (game.retail_price > user.private.balance) {
       throw new HttpException(
         {
@@ -58,13 +71,14 @@ export class BillingService {
   ): Promise<GenericSuccessResponseDTO> {
     const user = await this.userService.findEntry(
       { userid: userid },
-      { private: true },
+      { private: true, ownedGames: true },
     );
     const game = await this.gameService.findEntry({
       gameid: purchaseDTO.productid,
     });
 
-    this.checkUserBalanceForPurchaseOrThrow(user, game);
+    await this.checkUserAlreadyOwnsLicense(user, game);
+    this.checkUserBalanceForPurchase(user, game);
 
     const GamePurchase = new GamePurchaseEntity();
     GamePurchase.user = user;
