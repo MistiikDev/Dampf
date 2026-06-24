@@ -121,7 +121,7 @@ export class UserController {
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<UserEntity | null> {
-    return await this.userService.findEntry({ userid: id }, { private: true });
+    return await this.userService.findEntry({ userid: id });
   }
 
   // POST /user
