@@ -17,7 +17,7 @@ export class UserEntity extends TimestampEntity {
   @PrimaryGeneratedColumn('uuid')
   userid: string;
 
-  @Column()
+  @Column({ unique: true })
   username: string;
 
   @Column({ default: Role.ROLE_PLAYER })

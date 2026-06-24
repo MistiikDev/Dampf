@@ -37,6 +37,6 @@ export class UserPrivateEntity {
     cascade: true,
     onDelete: 'CASCADE',
   })
-  @JoinColumn()
+  @JoinColumn({ foreignKeyConstraintName: 'user_id' })
   user: UserEntity;
 }

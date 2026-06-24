@@ -5,5 +5,5 @@ export class GenericSuccessResponseDTO {
     description:
       'Returns true or false depending on whether the request was successful',
   })
-  success: boolean;
+  readonly success: boolean;
 }

@@ -6,7 +6,6 @@ import {
   Param,
   Patch,
   Post,
-  ValidationPipe,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import {
@@ -21,11 +20,8 @@ import {
 } from '@nestjs/swagger';
 
 import { UserService } from './user.service';
-import {
-  CreateUserDto,
-  CreateUserResponseDTO,
-} from '../core/dto/create-user.dto';
-import { UpdateUserDto } from '../core/dto/update-user.dto';
+import { CreateUserDto, CreateUserResponseDTO } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 import { Public } from '../core/decorators/ispublic.decorator';
 import { Roles } from '../core/decorators/roles.decorator';
@@ -36,8 +32,8 @@ import {
   ActiveSession,
   UserSession,
 } from '../core/decorators/activeSession.decorator';
-import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
-import { UserEntityResponseDTO } from '../core/dto/user-entity.dto';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
+import { UserEntityResponseDTO } from './dto/user-entity.dto';
 
 @Controller('user')
 export class UserController {
@@ -84,9 +80,30 @@ export class UserController {
     return await this.userService.givePublisherRights(user.userid);
   }
 
+  // GET /user/games
+  // RETURN A LIST OF OWNED GAMES
+  @ApiBearerAuth('access-token')
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully fetched user games',
+    type: UserEntityResponseDTO,
+  })
+  @ApiForbiddenResponse({
+    description: 'User must be logged in to fetch all users',
+  })
+  @ApiNotFoundResponse({
+    description: 'User does not exist',
+  })
+  @Get('games')
+  async getGames(@ActiveSession() user: UserSession) {
+    return this.userService.findEntry(
+      { userid: user.userid },
+      { ownedGames: { game: true } },
+    );
+  }
+
   // GET /user/id
   // RETURN USER INFO FROM USERID
-
   @ApiOperation({ summary: 'Get a user from his USERID' })
   @ApiResponse({
     status: 201,
@@ -94,7 +111,7 @@ export class UserController {
     type: UserEntityResponseDTO,
   })
   @ApiForbiddenResponse({
-    description: 'User must be logged in to fetch all users',
+    description: 'User must be logged in to fetch all user(s)',
   })
   @ApiNotFoundResponse({
     description: 'User does not exist',
@@ -104,10 +121,7 @@ export class UserController {
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<UserEntity | null> {
-    return await this.userService.findEntry(
-      { userid: id },
-      { ownedGames: { game: true }, private: true },
-    );
+    return await this.userService.findEntry({ userid: id });
   }
 
   // POST /user
@@ -125,7 +139,7 @@ export class UserController {
   @Post()
   @Public()
   async create(
-    @Body(new ValidationPipe()) createUserDto: CreateUserDto,
+    @Body() createUserDto: CreateUserDto,
   ): Promise<CreateUserResponseDTO> {
     return await this.userService.create(createUserDto);
   }
@@ -143,7 +157,7 @@ export class UserController {
   @Patch()
   async update(
     @ActiveSession() user: UserSession,
-    @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
     if (user) {
       return await this.userService.update(user.userid, updateUserDto);
@@ -167,7 +181,7 @@ export class UserController {
   @Roles([Role.ROLE_ADMIN])
   async updateThis(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
     return await this.userService.update(id, updateUserDto);
   }

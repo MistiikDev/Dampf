@@ -25,7 +25,11 @@ export class GameEntity extends TimestampEntity {
   @Column()
   retail_price: number;
 
-  @ManyToOne(() => UserEntity, (user) => user.publishedGames)
+  @ManyToOne(() => UserEntity, (user) => user.publishedGames, {
+    cascade: true,
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ foreignKeyConstraintName: 'publisher_user_id' })
   publisher: UserEntity;
 

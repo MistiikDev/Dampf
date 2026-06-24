@@ -13,6 +13,8 @@ import { RolesModule } from './roles/roles.module';
 import { BillingModule } from './billing/billing.module';
 
 import { typeOrmAsyncConfig } from '../config/typeorm.config';
+import { LoggingInterceptor } from './core/interceptors/logging.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -27,6 +29,12 @@ import { typeOrmAsyncConfig } from '../config/typeorm.config';
     BillingModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+  ],
 })
 export class AppModule {}

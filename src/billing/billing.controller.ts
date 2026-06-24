@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  ValidationPipe,
   Get,
   Param,
   ParseIntPipe,
@@ -18,14 +17,14 @@ import {
 
 import { BillingService } from './billing.service';
 
-import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
+import { CreatePurchaseDTO } from './dto/purchase.dto';
 
 import {
   ActiveSession,
   UserSession,
 } from '../core/decorators/activeSession.decorator';
-import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
-import { BalanceResponseDTO } from '../core/dto/balance.dto';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
+import { BalanceResponseDTO } from './dto/balance.dto';
 
 @Controller('billing')
 export class BillingController {
@@ -50,7 +49,7 @@ export class BillingController {
   @Post('purchase')
   async purchase(
     @ActiveSession() user: UserSession,
-    @Body(new ValidationPipe()) purchaseDTO: CreatePurchaseDTO,
+    @Body() purchaseDTO: CreatePurchaseDTO,
   ): Promise<GenericSuccessResponseDTO> {
     return this.billingService.processPurchase(user.userid, purchaseDTO);
   }
@@ -74,7 +73,10 @@ export class BillingController {
   // POST /billing/balance/recharge
   // RECHARGE BALANCE FOR CURRENT LOGGED USER
   @ApiBearerAuth('access-token')
-  @ApiOperation({ description: 'Recharge your balance' })
+  @ApiOperation({
+    description:
+      'Recharge your balance - GiftCardIds range from 1 to 5 (5$ to 100$)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Successfully recharged balance',
