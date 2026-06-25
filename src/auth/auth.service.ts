@@ -33,6 +33,7 @@ export class AuthService {
     field: string,
     required: boolean,
   ): T {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const v: T = req.cookies[field];
 
     if (required && !v) {
@@ -110,7 +111,14 @@ export class AuthService {
       false,
     );
 
-    if (refToken) {
+    // Check if stored refresh token IS a token for current target user (maybe there were 2 different profiles logggin in on the same browser)
+    const isPrevTokenForUser: boolean =
+      refToken == null
+        ? false
+        : (await this.getUserSessionFromToken(refToken, 'JWT_REFRESH_SECRET'))
+            .userid == user.userid;
+
+    if (refToken && isPrevTokenForUser) {
       if (user.private.refresh_token_blacklist != null) {
         user.private.refresh_token_blacklist.push(refToken);
       } else {
@@ -166,8 +174,16 @@ export class AuthService {
   }
 
   async refresh(req: Request): Promise<LoginUserResponseDTO> {
-    const refresh_token: string = this.getFieldFromCookies<string>(req, 'refresh-token', true);
-    const payload: UserSession = await this.getUserSessionFromToken(refresh_token, 'JWT_REFRESH_SECRET');
+    const refresh_token: string = this.getFieldFromCookies<string>(
+      req,
+      'refresh-token',
+      true,
+    );
+
+    const payload: UserSession = await this.getUserSessionFromToken(
+      refresh_token,
+      'JWT_REFRESH_SECRET',
+    );
 
     const freshUser = await this.userService.findEntry(
       {

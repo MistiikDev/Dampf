@@ -1,4 +1,8 @@
-import { Injectable, NotAcceptableException } from '@nestjs/common';
+import {
+  Injectable,
+  NotAcceptableException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -8,6 +12,7 @@ import { UpdateGameDTO } from './dto/update-game.dto';
 import { GameEntity } from './entity/game.entity';
 import { UserService } from '../user/user.service';
 import { GenericService } from '../core/generics/generic.service';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
 
 @Injectable()
 export class GamesService extends GenericService<GameEntity> {
@@ -41,19 +46,63 @@ export class GamesService extends GenericService<GameEntity> {
     }
   }
 
-  async update(userid: string, gameid: number, updateGameDto: UpdateGameDTO) {
+  async update(
+    userid: string,
+    gameid: number,
+    updateGameDto: UpdateGameDTO,
+    isAdmin: boolean,
+  ) {
     const target_game: GameEntity = await this.findEntry(
       { gameid: gameid },
       { publisher: true },
     );
 
+    if (!target_game.publisher) {
+      throw new NotFoundException(
+        'Publisher has deleted his profile, game is archived!',
+      );
+    }
+
     // Only let user update if it is his OWN game
-    if (userid == target_game?.publisher.userid) {
+    if (userid == target_game.publisher.userid || isAdmin) {
       Object.assign(target_game, updateGameDto);
 
       await this.gameRepository.save(target_game);
 
       return updateGameDto;
+    } else {
+      throw new NotAcceptableException('You must be the owner of the game to edit it!');
     }
+  }
+
+  async delete(
+    userid: string,
+    gameid: number,
+    isAdmin: boolean,
+  ): Promise<GenericSuccessResponseDTO> {
+    const target_game: GameEntity = await this.findEntry(
+      { gameid: gameid },
+      { publisher: true },
+    );
+
+    if (!isAdmin) {
+      if (!target_game.publisher) {
+        throw new NotFoundException(
+          'Publisher has deleted his profile, game is archived!',
+        );
+      }
+
+      if (userid != target_game.publisher.userid) {
+        throw new NotAcceptableException(
+          'You must be the owner of the game to delete it!',
+        );
+      }
+    }
+
+    await this.gameRepository.delete({ gameid: gameid });
+
+    return {
+      success: true,
+    };
   }
 }

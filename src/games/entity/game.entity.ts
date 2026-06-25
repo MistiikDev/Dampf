@@ -22,7 +22,7 @@ export class GameEntity extends TimestampEntity {
   @Column()
   description: string;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0.0 })
   retail_price: number;
 
   @ManyToOne(() => UserEntity, (user) => user.publishedGames, {
