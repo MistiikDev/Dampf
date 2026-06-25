@@ -2,12 +2,14 @@ import {
   Controller,
   Post,
   Body,
-  ValidationPipe,
-  Request,
+  Get,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiForbiddenResponse,
   ApiOperation,
   ApiPaymentRequiredResponse,
   ApiResponse,
@@ -15,13 +17,14 @@ import {
 
 import { BillingService } from './billing.service';
 
-import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
+import { CreatePurchaseDTO } from './dto/purchase.dto';
 
 import {
   ActiveSession,
   UserSession,
 } from '../core/decorators/activeSession.decorator';
-import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
+import { BalanceResponseDTO } from './dto/balance.dto';
 
 @Controller('billing')
 export class BillingController {
@@ -43,11 +46,53 @@ export class BillingController {
   @ApiPaymentRequiredResponse({
     description: 'Insufficient balance',
   })
-  @Post(':purchase')
+  @Post('purchase')
   async purchase(
     @ActiveSession() user: UserSession,
-    @Body(new ValidationPipe()) purchaseDTO: CreatePurchaseDTO,
+    @Body() purchaseDTO: CreatePurchaseDTO,
   ): Promise<GenericSuccessResponseDTO> {
     return this.billingService.processPurchase(user.userid, purchaseDTO);
+  }
+
+  // GET /billing/balance
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ description: 'Check your balance' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved balance',
+    type: BalanceResponseDTO,
+  })
+  @ApiForbiddenResponse({
+    description: 'You need to be logged in to check your balance',
+  })
+  @Get('balance')
+  async getBalance(@ActiveSession() user: UserSession) {
+    return await this.billingService.getUserBalance(user.userid);
+  }
+
+  // POST /billing/balance/recharge
+  // RECHARGE BALANCE FOR CURRENT LOGGED USER
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    description:
+      'Recharge your balance - GiftCardIds range from 1 to 5 (5$ to 100$)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully recharged balance',
+    type: GenericSuccessResponseDTO,
+  })
+  @ApiForbiddenResponse({
+    description: 'You need to be logged in to check your balance',
+  })
+  @Post('balance/recharge/:giftCardId')
+  async rechargeBalance(
+    @ActiveSession() user: UserSession,
+    @Param('giftCardId', ParseIntPipe) giftCardId: number,
+  ) {
+    return await this.billingService.rechargeUserBalance(
+      user.userid,
+      giftCardId,
+    );
   }
 }

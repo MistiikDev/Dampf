@@ -1,83 +1,108 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotAcceptableException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import {
-  CreateGameDTO,
-  CreateGameResponseDTO,
-} from '../core/dto/create-game.dto';
-import { UpdateGameDTO } from '../core/dto/update-game.dto';
+import { CreateGameDTO, CreateGameResponseDTO } from './dto/create-game.dto';
+import { UpdateGameDTO } from './dto/update-game.dto';
 
 import { GameEntity } from './entity/game.entity';
 import { UserService } from '../user/user.service';
-import { Role } from '../roles/roles.enum';
+import { GenericService } from '../core/generics/generic.service';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
 
 @Injectable()
-export class GamesService {
+export class GamesService extends GenericService<GameEntity> {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
     private userService: UserService,
-  ) {}
-
-  async findAll() {
-    return await this.gameRepository.find();
+  ) {
+    super(gameRepository);
   }
 
-  async findOne(gameid: number) {
-    const game = await this.gameRepository.findOne({
-      where: { gameid: gameid },
+  async create(userid: string, createGameDTO: CreateGameDTO) {
+    const user = await this.userService.findEntry({ userid: userid });
+    const game = this.gameRepository.create({
+      ...createGameDTO,
+      publisher: user,
     });
 
-    if (game) {
-      return game;
-    }
+    try {
+      const savedGame = await this.gameRepository.save(game);
 
-    throw new HttpException('Game Not Found', HttpStatus.NOT_FOUND);
+      const response: CreateGameResponseDTO = {
+        gameid: savedGame.gameid,
+        publisherid: userid,
+      };
+
+      return response;
+    } catch {
+      // 99% a duplicate issue with TITLE { unique: true }
+      throw new NotAcceptableException('Game must be original!');
+    }
   }
 
-  async create(userid: number, createGameDTO: CreateGameDTO) {
-    const user = await this.userService.getUserBy({ userid: userid });
+  async update(
+    userid: string,
+    gameid: number,
+    updateGameDto: UpdateGameDTO,
+    isAdmin: boolean,
+  ) {
+    const target_game: GameEntity = await this.findEntry(
+      { gameid: gameid },
+      { publisher: true },
+    );
 
-    if (user.role === Role.ROLE_PLAYER) {
-      throw new HttpException(
-        'Publisher ID must point to a valid user with PUBLISHER permissions',
-        HttpStatus.FORBIDDEN,
+    if (!target_game.publisher) {
+      throw new NotFoundException(
+        'Publisher has deleted his profile, game is archived!',
       );
     }
 
-    const game = new GameEntity();
-    game.title = createGameDTO.title;
-    game.retail_price = createGameDTO.retail_price;
-    game.description = createGameDTO.description;
-    game.publisher = user;
-
-    const savedGame = await this.gameRepository.save(game);
-
-    const response: CreateGameResponseDTO = {
-      gameid: savedGame.gameid,
-      publisherid: savedGame.publisher.userid,
-    };
-
-    return response;
-  }
-
-  async update(userid: number, gameid: number, updateGameDto: UpdateGameDTO) {
-    const target_game = await this.gameRepository.findOne({
-      where: { gameid: gameid },
-    });
-
-    if (userid == target_game?.publisher.userid) {
+    // Only let user update if it is his OWN game
+    if (userid == target_game.publisher.userid || isAdmin) {
       Object.assign(target_game, updateGameDto);
 
       await this.gameRepository.save(target_game);
 
       return updateGameDto;
+    } else {
+      throw new NotAcceptableException('You must be the owner of the game to edit it!');
     }
   }
 
-  // INTERNAL ONLY
-  async saveRepository(game: GameEntity) {
-    return await this.gameRepository.save(game);
+  async delete(
+    userid: string,
+    gameid: number,
+    isAdmin: boolean,
+  ): Promise<GenericSuccessResponseDTO> {
+    const target_game: GameEntity = await this.findEntry(
+      { gameid: gameid },
+      { publisher: true },
+    );
+
+    if (!isAdmin) {
+      if (!target_game.publisher) {
+        throw new NotFoundException(
+          'Publisher has deleted his profile, game is archived!',
+        );
+      }
+
+      if (userid != target_game.publisher.userid) {
+        throw new NotAcceptableException(
+          'You must be the owner of the game to delete it!',
+        );
+      }
+    }
+
+    await this.gameRepository.delete({ gameid: gameid });
+
+    return {
+      success: true,
+    };
   }
 }

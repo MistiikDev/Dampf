@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 
-import { AuthGuard } from './auth.guard';
+import { AuthGuard } from '../core/guards/auth.guard';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 
@@ -18,7 +18,7 @@ const configService = new ConfigService();
     JwtModule.register({
       global: true,
       secret: configService.getOrThrow<string>('JWT_SECRET'),
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '10m' },
     }),
   ],
   controllers: [AuthController],

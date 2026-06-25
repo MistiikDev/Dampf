@@ -1,49 +1,50 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+
 import {
-  CreateUserDto,
-  CreateUserResponseDTO,
-} from '../core/dto/create-user.dto';
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotAcceptableException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
+import { CreateUserDto, CreateUserResponseDTO } from './dto/create-user.dto';
 import { Role } from '../roles/roles.enum';
 import { UserEntity } from './entity/user.entity';
-import { UpdateUserDto } from '../core/dto/update-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserPrivateEntity } from './entity/user-private.entity';
 
-import { ConfigService } from '@nestjs/config';
+import { GenericService } from '../core/generics/generic.service';
 
 @Injectable()
-export class UserService {
+export class UserService extends GenericService<UserEntity> {
   constructor(
-    private configService: ConfigService,
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
 
     @InjectRepository(UserPrivateEntity)
     private userPrivateRepository: Repository<UserPrivateEntity>,
   ) {
-    this.configService = new ConfigService();
+    super(userRepository);
   }
 
-  async findAll() {
-    return await this.userRepository.find();
-  }
-
-  async findOne(id: number) {
-    const user = await this.userRepository.findOne({
-      where: { userid: id },
-      relations: { ownedGames: { game: true } },
-    });
-
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
-
-    return user;
+  async savePrivateItem(
+    userPrivate: UserPrivateEntity,
+  ): Promise<UserPrivateEntity> {
+    return await this.userPrivateRepository.save(userPrivate);
   }
 
   async create(user: CreateUserDto) {
+    /*
+    User Object is separated into 2 entites
+    USER PUBLIC: Contains basic public information (username, owned games, hours played etc..)
+    USER PRIVATE: Contains all registration information (email; password hashed, etc..)
+
+    Routes that execute SELECT queries for USER will ONLY return USER PUBLIC information
+     */
+
     const userPublic = new UserEntity();
     userPublic.username = user.username;
     userPublic.role = Role.ROLE_PLAYER;
@@ -63,120 +64,100 @@ export class UserService {
     userPrivate.password = await bcrypt.hash(user.password, hashSecret);
 
     try {
-      await this.userPrivateRepository.save(userPrivate);
-      await this.userRepository.save(userPublic).catch(() => {
-        throw new HttpException(
-          'Could not save user data',
-          HttpStatus.BAD_REQUEST,
-        );
-      });
-
-      const userCreateResponse: CreateUserResponseDTO = {
-        userid: userPublic.userid,
-        username: userPublic.username,
-      };
-
-      return userCreateResponse;
+      await this.savePrivateItem(userPrivate);
+      await this.saveItem(userPublic);
     } catch {
-      throw new HttpException(
-        'User is already registered!',
-        HttpStatus.CONFLICT,
-      );
+      throw new ConflictException('User is already registered!');
     }
+
+    const userCreateResponse: CreateUserResponseDTO = {
+      userid: userPublic.userid,
+      username: userPublic.username,
+    };
+
+    return userCreateResponse;
   }
 
-  async update(userid: number, updateUserDto: UpdateUserDto) {
+  async update(userid: string, updateUserDto: UpdateUserDto) {
     /*
     TODO: Right now if the user updates its username or any data stored inside ACCESS_SESSION,
     TODO: the session data will NOT be changed until a new JWT is generated (login / logout or clear jwt)
     */
 
     if (!updateUserDto || Object.keys(updateUserDto).length === 0) {
-      throw new HttpException('No payload sent', HttpStatus.NOT_ACCEPTABLE);
+      throw new NotAcceptableException('No payload sent');
     }
 
-    const user = await this.getUserBy({ userid: userid });
+    const user = await this.findEntry({ userid: userid }, { private: true });
     const userPrivate = user.private;
 
-    try {
-      Object.assign(user, updateUserDto);
-      Object.assign(userPrivate, updateUserDto);
+    Object.assign(user, updateUserDto);
 
-      console.log(userPrivate, user, updateUserDto);
-
-      await this.userRepository.save(user);
-      await this.userPrivateRepository.save(userPrivate);
-
-      return updateUserDto;
-    } catch {
-      throw new HttpException(
-        'Could not save user data',
-        HttpStatus.FAILED_DEPENDENCY,
+    // Check if there is a password change, if there is hash it.
+    if (updateUserDto.password) {
+      const hashSecret: number = parseInt(
+        this.configService.getOrThrow<string>('HASH_SECRET'),
       );
+
+      userPrivate.password = await bcrypt.hash(
+        updateUserDto.password,
+        hashSecret,
+      );
+    }
+
+    const { password, ...clearUpdateUserDto } = updateUserDto;
+    Object.assign(userPrivate, clearUpdateUserDto);
+
+    // Update both entries
+    try {
+      await this.saveItem(user);
+      await this.savePrivateItem(userPrivate);
+
+      return clearUpdateUserDto as UpdateUserDto;
+    } catch {
+      throw new InternalServerErrorException('Could not save user data');
     }
   }
 
-  async delete(userid: number) {
-    await this.userRepository.delete(userid);
-  }
-
-  // INTERNAL ONLY
-  async givePublisherRights(userid: number) {
-    const user = await this.getUserBy({ userid: userid });
+  // INTERNAL ONLY, allows to give created user publishing rights faster than editing the token in swagger
+  async givePublisherRights(userid: string) {
+    const user = await this.findEntry({ userid: userid });
     if (user.role != Role.ROLE_PLAYER) {
-      throw new HttpException(
+      throw new BadRequestException(
         'Specified user already has publishing rights',
-        HttpStatus.BAD_REQUEST,
       );
     }
     try {
       user.role = Role.ROLE_PUBLISHER;
-      await this.userRepository.save(user);
+      await this.saveItem(user);
 
       return {
         success: true,
       };
     } catch {
-      throw new HttpException(
+      throw new InternalServerErrorException(
         'Internal error while escalating user rights',
-        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  async getUserBy(filter: FindOptionsWhere<UserEntity>): Promise<UserEntity> {
-    const user: UserEntity | null = await this.userRepository.findOne({
-      where: filter,
-      relations: { private: true },
-    });
-
-    if (user == undefined) {
-      throw new HttpException('User was not found!', HttpStatus.NOT_FOUND);
-    }
-
-    return user;
-  }
+  // TEMPORARY; needs more security / be more generic
+  // TODO: Add a generic ModifiyField() method inside Generic Service
+  // Problem: Generic Service only references one repository (user has 2)
 
   async addUserBalance(
-    userid: number,
+    userid: string,
     balanceChange: number,
   ): Promise<boolean> {
-    const user = await this.getUserBy({ userid: userid });
+    const user = await this.findEntry({ userid: userid }, { private: true });
     const userPrivate = user.private;
 
     userPrivate.balance += balanceChange;
 
-    await this.userPrivateRepository.save(userPrivate).catch(() => {
-      throw new HttpException(
-        'Could not save user internal data',
-        HttpStatus.BAD_REQUEST,
-      );
+    await this.savePrivateItem(userPrivate).catch(() => {
+      throw new BadRequestException('Error while recharging user balance');
     });
 
     return true;
-  }
-
-  async saveRepository(user: UserEntity) {
-    return await this.userRepository.save(user);
   }
 }

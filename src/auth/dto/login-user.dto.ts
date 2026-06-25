@@ -5,12 +5,12 @@ export class LoginUserDTO {
   @ApiProperty({ description: 'Profiles username', example: 'Gaben' })
   @IsString()
   @IsNotEmpty()
-  username: string;
+  readonly username: string;
 
   @ApiProperty({ description: 'Profiles password', example: 'password123' })
   @IsString()
   @IsNotEmpty()
-  password: string;
+  readonly password: string;
 }
 
 export class LoginUserResponseDTO {
@@ -18,5 +18,5 @@ export class LoginUserResponseDTO {
     description: 'Profiles JWT access token',
     example: '-d52A_CFtwQZ)cs587fP&ad',
   })
-  access_token: string;
+  readonly access_token: string;
 }

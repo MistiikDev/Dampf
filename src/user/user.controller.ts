@@ -4,23 +4,10 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
-  ValidationPipe,
-  Request,
+  ParseUUIDPipe,
 } from '@nestjs/common';
-
-import { UserService } from './user.service';
-import {
-  CreateUserDto,
-  CreateUserResponseDTO,
-} from '../core/dto/create-user.dto';
-import { UpdateUserDto } from '../core/dto/update-user.dto';
-
-import { Public } from '../core/decorators/ispublic.decorator';
-import { Roles } from '../core/decorators/roles.decorator';
-import { Role } from '../roles/roles.enum';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -31,12 +18,22 @@ import {
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
+
+import { UserService } from './user.service';
+import { CreateUserDto, CreateUserResponseDTO } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+
+import { Public } from '../core/decorators/ispublic.decorator';
+import { Roles } from '../core/decorators/roles.decorator';
+import { Role } from '../roles/roles.enum';
 import { UserEntity } from './entity/user.entity';
+
 import {
   ActiveSession,
   UserSession,
 } from '../core/decorators/activeSession.decorator';
-import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
+import { UserEntityResponseDTO } from './dto/user-entity.dto';
 
 @Controller('user')
 export class UserController {
@@ -49,16 +46,13 @@ export class UserController {
   @ApiResponse({
     status: 201,
     description: 'Successfully fetched all users',
-    type: UserEntity,
+    type: UserEntityResponseDTO,
     isArray: true,
-  })
-  @ApiForbiddenResponse({
-    description: 'User must be logged in to fetch all users',
   })
   @Get()
   @Public()
   async findAll(): Promise<UserEntity[]> {
-    return await this.userService.findAll();
+    return await this.userService.findAllEntries();
   }
 
   // GET /user/license
@@ -83,14 +77,13 @@ export class UserController {
     return await this.userService.givePublisherRights(user.userid);
   }
 
-  // GET /user/id
-  // RETURN USER INFO FROM USERID
-
-  @ApiOperation({ summary: 'Get a user from his USERID' })
+  // GET /user/games
+  // RETURN A LIST OF OWNED GAMES
+  @ApiBearerAuth('access-token')
   @ApiResponse({
-    status: 201,
-    description: 'Successfully fetched user from his USERID',
-    type: UserEntity,
+    status: 200,
+    description: 'Successfully fetched user games',
+    type: UserEntityResponseDTO,
   })
   @ApiForbiddenResponse({
     description: 'User must be logged in to fetch all users',
@@ -98,12 +91,31 @@ export class UserController {
   @ApiNotFoundResponse({
     description: 'User does not exist',
   })
+  @Get('games')
+  async getGames(@ActiveSession() user: UserSession) {
+    return this.userService.findEntry(
+      { userid: user.userid },
+      { ownedGames: { game: true } },
+    );
+  }
+
+  // GET /user/id
+  // RETURN USER INFO FROM USERID
+  @ApiOperation({ summary: 'Get a user from his USERID' })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully fetched user from his USERID',
+    type: UserEntityResponseDTO,
+  })
+  @ApiNotFoundResponse({
+    description: 'User does not exist',
+  })
   @Get(':id')
   @Public()
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<UserEntity | null> {
-    return await this.userService.findOne(id);
+    return await this.userService.findEntry({ userid: id });
   }
 
   // POST /user
@@ -121,7 +133,7 @@ export class UserController {
   @Post()
   @Public()
   async create(
-    @Body(new ValidationPipe()) createUserDto: CreateUserDto,
+    @Body() createUserDto: CreateUserDto,
   ): Promise<CreateUserResponseDTO> {
     return await this.userService.create(createUserDto);
   }
@@ -137,10 +149,9 @@ export class UserController {
     type: UpdateUserDto,
   })
   @Patch()
-  @Roles([Role.ROLE_PLAYER])
   async update(
     @ActiveSession() user: UserSession,
-    @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
     if (user) {
       return await this.userService.update(user.userid, updateUserDto);
@@ -163,8 +174,8 @@ export class UserController {
   @Patch(':id')
   @Roles([Role.ROLE_ADMIN])
   async updateThis(
-    @Param('id', ParseIntPipe) id: number,
-    @Body(new ValidationPipe()) updateUserDto: UpdateUserDto,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
     return await this.userService.update(id, updateUserDto);
   }
@@ -182,9 +193,8 @@ export class UserController {
     description: 'User must be logged in to execute command',
   })
   @Delete()
-  @Roles([Role.ROLE_PLAYER])
   async delete(@ActiveSession() user: UserSession) {
-    return await this.userService.delete(user.userid);
+    return await this.userService.deleteFromProprety({ userid: user.userid });
   }
 
   // DELETE /user/id
@@ -201,7 +211,7 @@ export class UserController {
   })
   @Delete(':id')
   @Roles([Role.ROLE_ADMIN])
-  async deleteThis(@Param('id', ParseIntPipe) userid: number) {
-    return await this.userService.delete(userid);
+  async deleteThis(@Param('id', ParseUUIDPipe) userid: string) {
+    return await this.userService.deleteFromProprety({ userid: userid });
   }
 }

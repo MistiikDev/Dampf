@@ -5,39 +5,31 @@ export class CreateGameDTO {
   @ApiProperty({ description: 'Title of the game', example: 'Deadlock' })
   @IsString()
   @IsNotEmpty()
-  title: string;
+  readonly title: string;
 
   @ApiProperty({
     description: 'Description of the game',
     example: 'MOBA Movement Shooter game',
   })
   @IsString()
-  description: string;
+  readonly description: string;
 
   @ApiProperty({
     description:
       'Price at which users can buy the game, can be set to 0 for F2P games',
     example: 69.99,
   })
-  @IsNumber()
+  @IsNumber({})
   @IsNotEmpty()
-  retail_price: number;
-
-  @ApiProperty({
-    description: 'Publisher of the game, must point to a valid USERID',
-    example: 1,
-  })
-  @IsNumber()
-  @IsNotEmpty()
-  publisher_id: number;
+  readonly retail_price: number;
 }
 
 export class CreateGameResponseDTO {
   @ApiProperty()
   @IsNumber()
-  gameid: number;
+  readonly gameid: number;
 
   @ApiProperty()
   @IsNumber()
-  publisherid: number;
+  readonly publisherid: string;
 }

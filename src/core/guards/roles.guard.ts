@@ -1,24 +1,19 @@
 import {
   CanActivate,
   ExecutionContext,
-  HttpException,
-  HttpStatus,
+  ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 
 import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 
-import { Role } from './roles.enum';
-import { Roles } from '../core/decorators/roles.decorator';
+import { Role } from '../../roles/roles.enum';
+import { Roles } from '../decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(
-    private reflector: Reflector,
-    private jwtService: JwtService,
-  ) {}
+  constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
     const req_roles: Role[] = this.reflector.getAllAndOverride(Roles, [
@@ -38,10 +33,7 @@ export class RolesGuard implements CanActivate {
 
       return req_roles.includes(user_roles);
     } catch {
-      throw new HttpException(
-        'Forbidden access denied for this action',
-        HttpStatus.FORBIDDEN,
-      );
+      throw new ForbiddenException('Forbidden access denied for this action');
     }
   }
 }

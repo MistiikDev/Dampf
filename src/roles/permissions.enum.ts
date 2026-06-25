@@ -1,0 +1,12 @@
+export enum EnumPermissions {
+  CAN_ACCESS_API = 0,
+  CAN_QUERY_GET_PUBLIC = 1,
+  CAN_QUERY_GET_ALL = 2,
+  CAN_PUBLISH_GAMES = 3,
+  CAN_EDIT_GAMES = 4,
+  CAN_DELETE_GAMES = 5,
+
+  CAN_ADMIN_USERS = 6,
+  CAN_ADMIN_GAMES = 7,
+  CAN_SUPER = 8,
+}

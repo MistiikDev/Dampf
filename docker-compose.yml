@@ -5,8 +5,22 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3000:3000'
-    environment:
-      - PORT=3000
-      - NODE_ENV=development
+    env_file:
+      - .env
+    depends_on:
+      - postgres
     volumes:
       - ./src:/app/src
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test_nest
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgData:/var/lib/postgresql/data
+volumes:
+  pgData:

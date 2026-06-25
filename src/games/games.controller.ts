@@ -4,10 +4,9 @@ import {
   Param,
   Post,
   Body,
-  Request,
   Patch,
   ParseIntPipe,
-  ValidationPipe,
+  Delete,
 } from '@nestjs/common';
 
 import {
@@ -22,18 +21,17 @@ import { Public } from '../core/decorators/ispublic.decorator';
 import { Roles } from '../core/decorators/roles.decorator';
 import { Role } from '../roles/roles.enum';
 
-import {
-  CreateGameDTO,
-  CreateGameResponseDTO,
-} from '../core/dto/create-game.dto';
-import { UpdateGameDTO } from '../core/dto/update-game.dto';
+import { CreateGameDTO, CreateGameResponseDTO } from './dto/create-game.dto';
+import { UpdateGameDTO } from './dto/update-game.dto';
 
 import { GamesService } from './games.service';
-import { GameEntity } from './entity/game.entity';
+
 import {
   ActiveSession,
   UserSession,
 } from '../core/decorators/activeSession.decorator';
+import { GameEntityResponseDTO } from './dto/game-entity.dto';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
 
 @Controller('games')
 export class GamesController {
@@ -46,13 +44,13 @@ export class GamesController {
   @ApiResponse({
     status: 201,
     description: 'Successfully retrieved games',
-    type: GameEntity,
+    type: GameEntityResponseDTO,
     isArray: true,
   })
   @Get()
   @Public()
   findAll() {
-    return this.gamesService.findAll();
+    return this.gamesService.findAllEntries();
   }
 
   // GET /game/id
@@ -62,12 +60,12 @@ export class GamesController {
   @ApiResponse({
     status: 201,
     description: 'Successfully retreived game',
-    type: GameEntity,
+    type: GameEntityResponseDTO,
   })
   @Get(':id')
   @Public()
   findOne(@Param('id', ParseIntPipe) gameid: number) {
-    return this.gamesService.findOne(gameid);
+    return this.gamesService.findEntry({ gameid: gameid });
   }
 
   // POST /game
@@ -91,7 +89,7 @@ export class GamesController {
   @Roles([Role.ROLE_ADMIN, Role.ROLE_PUBLISHER])
   async create(
     @ActiveSession() user: UserSession,
-    @Body(new ValidationPipe()) createGameDto: CreateGameDTO,
+    @Body() createGameDto: CreateGameDTO,
   ) {
     return await this.gamesService.create(user.userid, createGameDto);
   }
@@ -103,7 +101,7 @@ export class GamesController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Edit a personal games information' })
   @ApiResponse({
-    status: 201,
+    status: 200,
     description: 'Successfully published game',
     type: UpdateGameDTO,
   })
@@ -118,8 +116,36 @@ export class GamesController {
   update(
     @ActiveSession() user: UserSession,
     @Param('id', ParseIntPipe) gameid: number,
-    @Body(new ValidationPipe()) updateGameDto: UpdateGameDTO,
+    @Body() updateGameDto: UpdateGameDTO,
   ) {
-    return this.gamesService.update(user.userid, gameid, updateGameDto);
+    return this.gamesService.update(
+      user.userid,
+      gameid,
+      updateGameDto,
+      user.role == Role.ROLE_ADMIN,
+    );
+  }
+
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Delete a game (you published)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully deleted game',
+    type: GenericSuccessResponseDTO,
+  })
+  @ApiForbiddenResponse({
+    description: 'You need to be a PUBLISHER to delete your games',
+  })
+  @Roles([Role.ROLE_PUBLISHER, Role.ROLE_ADMIN])
+  @Delete(':id')
+  delete(
+    @ActiveSession() user: UserSession,
+    @Param('id', ParseIntPipe) gameid: number,
+  ) {
+    return this.gamesService.delete(
+      user.userid,
+      gameid,
+      user.role == Role.ROLE_ADMIN,
+    );
   }
 }

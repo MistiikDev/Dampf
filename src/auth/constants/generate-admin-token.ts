@@ -10,7 +10,7 @@ const jwtService = new JwtService({
 });
 
 const token = jwtService.sign({
-  userid: 0,
+  userid: 'b99dc4ee-96a6-43e2-9132-fb48cf57d8d5',
   username: 'admin',
   role: Role.ROLE_ADMIN,
 });

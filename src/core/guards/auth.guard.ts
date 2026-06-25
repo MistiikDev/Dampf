@@ -1,14 +1,17 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 
 import { Request } from 'express';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
-import { Public } from '../core/decorators/ispublic.decorator';
+
+import { Public } from '../decorators/ispublic.decorator';
+import { CRequest } from '../types/request.type';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -28,19 +31,24 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const request: Request = context.switchToHttp().getRequest();
+      const request: CRequest = context.switchToHttp().getRequest();
       const token: string | undefined = this.extractTokenFromHeader(request);
 
       if (token != undefined) {
-        const payload = await this.jwtService.verifyAsync(token);
-        request['user'] = payload;
+        request.user = await this.jwtService.verifyAsync(token);
       } else {
-        return false;
+        throw new ForbiddenException(
+          'You need to be logged in to access this ressource',
+        );
       }
 
       return true;
-    } catch {
-      throw new UnauthorizedException();
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        throw new UnauthorizedException('Token expired');
+      }
+
+      throw new UnauthorizedException('Invalid token');
     }
   }
 

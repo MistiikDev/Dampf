@@ -1,19 +1,23 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
-  NotAcceptableException,
 } from '@nestjs/common';
-
-import { CreatePurchaseDTO } from '../core/dto/purchase.dto';
-import { UserService } from '../user/user.service';
-import { GamesService } from '../games/games.service';
-import { UserPrivateEntity } from '../user/entity/user-private.entity';
-import { GamePurchaseEntity } from './entity/game-purchase.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { GenericSuccessResponseDTO } from '../core/dto/generic-success-response.dto';
+
+import { UserService } from '../user/user.service';
+
+import { GamesService } from '../games/games.service';
+import { GamePurchaseEntity } from './entity/game-purchase.entity';
+
+import { CreatePurchaseDTO } from './dto/purchase.dto';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
+import { BalanceResponseDTO } from './dto/balance.dto';
+import { GameEntity } from '../games/entity/game.entity';
+import { UserEntity } from '../user/entity/user.entity';
 
 @Injectable()
 export class BillingService {
@@ -25,28 +29,56 @@ export class BillingService {
     private gameService: GamesService,
   ) {}
 
-  async processPurchase(
-    userid: number,
-    purchaseDTO: CreatePurchaseDTO,
-  ): Promise<GenericSuccessResponseDTO> {
-    const user = await this.userService.getUserBy({ userid: userid });
-    const game = await this.gameService.findOne(purchaseDTO.productid);
+  private readonly giftCardIdToBalance = {
+    1: 5,
+    2: 10,
+    3: 20,
+    4: 50,
+    5: 100,
+  };
 
-    if (!user || !game) {
-      throw new HttpException(
-        'Error while processing purchase',
-        HttpStatus.BAD_REQUEST,
+  async checkUserAlreadyOwnsLicense(user: UserEntity, game: GameEntity) {
+    const doesExist: boolean = await this.userGamePurchaseRepository.exists({
+      where: {
+        user: { userid: user.userid },
+        game: { gameid: game.gameid },
+      },
+    });
+
+    if (doesExist) {
+      throw new ForbiddenException(
+        `${user.username} already owns a license for ${game.title}!`,
       );
     }
+  }
 
-    const userPrivate: UserPrivateEntity = user.private;
-
-    if (game.retail_price > userPrivate.balance) {
+  checkUserBalanceForPurchase(user: UserEntity, game: GameEntity): boolean {
+    if (game.retail_price > user.private.balance) {
       throw new HttpException(
-        'Balance insufficient',
+        {
+          message: 'Balance insufficient',
+        },
         HttpStatus.PAYMENT_REQUIRED,
       );
     }
+
+    return true;
+  }
+
+  async processPurchase(
+    userid: string,
+    purchaseDTO: CreatePurchaseDTO,
+  ): Promise<GenericSuccessResponseDTO> {
+    const user = await this.userService.findEntry(
+      { userid: userid },
+      { private: true, ownedGames: true },
+    );
+    const game = await this.gameService.findEntry({
+      gameid: purchaseDTO.productid,
+    });
+
+    await this.checkUserAlreadyOwnsLicense(user, game);
+    this.checkUserBalanceForPurchase(user, game);
 
     const GamePurchase = new GamePurchaseEntity();
     GamePurchase.user = user;
@@ -55,16 +87,46 @@ export class BillingService {
 
     await this.userService.addUserBalance(user.userid, -game.retail_price);
 
-    // TRY to set game to user db
-    // THEN retract price from user balance
-
-    await this.userService.saveRepository(user);
-    await this.gameService.saveRepository(game);
-
+    await this.userService.saveItem(user);
+    await this.gameService.saveItem(game);
     await this.userGamePurchaseRepository.save(GamePurchase);
 
     return {
       success: true,
+    };
+  }
+
+  async rechargeUserBalance(
+    userid: string,
+    giftCardId: number,
+  ): Promise<GenericSuccessResponseDTO> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    if (
+      giftCardId == null ||
+      !Object.keys(this.giftCardIdToBalance).includes(giftCardId.toString())
+    ) {
+      throw new BadRequestException('Gift Card ID is not recognized');
+    }
+
+    const giftCardAmount = this.giftCardIdToBalance[giftCardId];
+
+    /*
+      Process Payment Method, confirmation, security ... here
+    */
+
+    return {
+      success: await this.userService.addUserBalance(userid, giftCardAmount),
+    };
+  }
+
+  async getUserBalance(userid: string): Promise<BalanceResponseDTO> {
+    const user = await this.userService.findEntry(
+      { userid: userid },
+      { private: true },
+    );
+
+    return {
+      balance: user.private.balance,
     };
   }
 }

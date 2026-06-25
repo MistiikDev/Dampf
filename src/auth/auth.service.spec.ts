@@ -1,18 +1,39 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
+import { HttpException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let mockUserService: any;
+  let mockJwtService: any;
+  let mockRequest: any;
+  let mockResponse: any;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService],
-    }).compile();
+  beforeEach(() => {
+    // Create fake repo
+    mockUserService = {
+      findEntry: jest.fn(),
+    };
 
-    service = module.get<AuthService>(AuthService);
+    mockJwtService = {
+      verifyAsync: jest.fn(),
+      signAsync: jest.fn(),
+    };
+
+    mockRequest = {};
+    mockResponse = {};
+
+    service = new AuthService(mockUserService, mockJwtService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  describe('login', () => {
+    // USER NOT FOUND UNIT TEST
+    it('Should return 404 if user is not found', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+      mockUserService.findEntry.mockResolvedValue(null);
+
+      await expect(
+        service.login('userDoesNotExist', 'x', mockRequest, mockResponse),
+      ).rejects.toThrow(HttpException);
+    });
   });
 });

@@ -56,4 +56,5 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 #Custom scripts
+/src/migrations/
 /src/auth/constants/generate-admin-token.ts
