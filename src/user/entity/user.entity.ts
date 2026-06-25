@@ -3,7 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Entity,
   OneToMany,
-  OneToOne,
+  OneToOne, JoinColumn, ManyToMany, ManyToOne,
 } from 'typeorm';
 
 import { Role } from '../../roles/roles.enum';

@@ -19,7 +19,7 @@ export class CreateGameDTO {
       'Price at which users can buy the game, can be set to 0 for F2P games',
     example: 69.99,
   })
-  @IsNumber()
+  @IsNumber({})
   @IsNotEmpty()
   readonly retail_price: number;
 }

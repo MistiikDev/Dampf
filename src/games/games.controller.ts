@@ -6,6 +6,7 @@ import {
   Body,
   Patch,
   ParseIntPipe,
+  Delete,
 } from '@nestjs/common';
 
 import {
@@ -30,6 +31,7 @@ import {
   UserSession,
 } from '../core/decorators/activeSession.decorator';
 import { GameEntityResponseDTO } from './dto/game-entity.dto';
+import { GenericSuccessResponseDTO } from '../core/generics/generic-success-response.dto';
 
 @Controller('games')
 export class GamesController {
@@ -99,7 +101,7 @@ export class GamesController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Edit a personal games information' })
   @ApiResponse({
-    status: 201,
+    status: 200,
     description: 'Successfully published game',
     type: UpdateGameDTO,
   })
@@ -116,6 +118,34 @@ export class GamesController {
     @Param('id', ParseIntPipe) gameid: number,
     @Body() updateGameDto: UpdateGameDTO,
   ) {
-    return this.gamesService.update(user.userid, gameid, updateGameDto);
+    return this.gamesService.update(
+      user.userid,
+      gameid,
+      updateGameDto,
+      user.role == Role.ROLE_ADMIN,
+    );
+  }
+
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Delete a game (you published)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully deleted game',
+    type: GenericSuccessResponseDTO,
+  })
+  @ApiForbiddenResponse({
+    description: 'You need to be a PUBLISHER to delete your games',
+  })
+  @Roles([Role.ROLE_PUBLISHER, Role.ROLE_ADMIN])
+  @Delete(':id')
+  delete(
+    @ActiveSession() user: UserSession,
+    @Param('id', ParseIntPipe) gameid: number,
+  ) {
+    return this.gamesService.delete(
+      user.userid,
+      gameid,
+      user.role == Role.ROLE_ADMIN,
+    );
   }
 }
