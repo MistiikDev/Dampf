@@ -49,9 +49,6 @@ export class UserController {
     type: UserEntityResponseDTO,
     isArray: true,
   })
-  @ApiForbiddenResponse({
-    description: 'User must be logged in to fetch all users',
-  })
   @Get()
   @Public()
   async findAll(): Promise<UserEntity[]> {
@@ -109,9 +106,6 @@ export class UserController {
     status: 201,
     description: 'Successfully fetched user from his USERID',
     type: UserEntityResponseDTO,
-  })
-  @ApiForbiddenResponse({
-    description: 'User must be logged in to fetch all user(s)',
   })
   @ApiNotFoundResponse({
     description: 'User does not exist',
