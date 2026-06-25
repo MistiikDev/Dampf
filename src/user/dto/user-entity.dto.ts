@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TimestampEntity } from '../../core/generics/timestamp-entity.entity';
 
-export class UserEntityResponseDTO {
+export class UserEntityResponseDTO extends TimestampEntity {
   @ApiProperty()
   readonly userid: string;
 
@@ -15,10 +16,4 @@ export class UserEntityResponseDTO {
       ' Array of Game Objects that the user owns | NULL on GET/user ',
   })
   readonly ownedGames: any[];
-
-  @ApiProperty()
-  readonly createdAt: Date;
-
-  @ApiProperty()
-  readonly updatedAt: Date;
 }

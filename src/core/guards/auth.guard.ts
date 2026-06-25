@@ -1,6 +1,7 @@
 import {
   CanActivate,
-  ExecutionContext, ForbiddenException,
+  ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 
 import { Public } from '../decorators/ispublic.decorator';
+import { CRequest } from '../types/request.type';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -29,12 +31,11 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const request: Request = context.switchToHttp().getRequest();
+      const request: CRequest = context.switchToHttp().getRequest();
       const token: string | undefined = this.extractTokenFromHeader(request);
 
       if (token != undefined) {
-        const payload = await this.jwtService.verifyAsync(token);
-        request['user'] = payload;
+        request.user = await this.jwtService.verifyAsync(token);
       } else {
         throw new ForbiddenException(
           'You need to be logged in to access this ressource',
