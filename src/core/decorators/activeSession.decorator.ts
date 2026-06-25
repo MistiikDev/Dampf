@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Role } from '../../roles/roles.enum';
+import { CRequest } from '../types/request.type';
 
 export class UserSession {
   userid: string;
@@ -13,8 +14,8 @@ export class UserSession {
 
 export const ActiveSession = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
-    const req: Request = ctx.switchToHttp().getRequest();
-    const userSession: UserSession = req['user'];
+    const req: CRequest = ctx.switchToHttp().getRequest();
+    const userSession: UserSession = req.user;
 
     if (!userSession) {
       throw new UnauthorizedException(
