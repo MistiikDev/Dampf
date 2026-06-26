@@ -152,11 +152,18 @@ export class UserService extends GenericService<UserEntity> {
     const user = await this.findEntry({ userid: userid }, { private: true });
     const userPrivate = user.private;
 
-    userPrivate.balance += balanceChange;
+    console.log(`Change in balance ${balanceChange}`);
+
+    userPrivate.balance = Number(userPrivate.balance) + balanceChange;
+
+    console.log(`Before ${userPrivate.balance}`);
 
     await this.savePrivateItem(userPrivate).catch(() => {
       throw new BadRequestException('Error while recharging user balance');
     });
+
+    console.log(`After ${userPrivate.balance}`);
+
 
     return true;
   }
