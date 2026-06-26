@@ -30,11 +30,11 @@ export class BillingService {
   ) {}
 
   private readonly giftCardIdToBalance = {
-    1: 5,
-    2: 10,
-    3: 20,
-    4: 50,
-    5: 100,
+    1: 5.00,
+    2: 10.00,
+    3: 20.00,
+    4: 50.00,
+    5: 100.00,
   };
 
   async checkUserAlreadyOwnsLicense(user: UserEntity, game: GameEntity) {
@@ -108,7 +108,7 @@ export class BillingService {
       throw new BadRequestException('Gift Card ID is not recognized');
     }
 
-    const giftCardAmount = this.giftCardIdToBalance[giftCardId];
+    const giftCardAmount: number = this.giftCardIdToBalance[giftCardId];
 
     /*
       Process Payment Method, confirmation, security ... here

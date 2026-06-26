@@ -18,7 +18,7 @@ export class UserPrivateEntity {
   @Column()
   lastname: string;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0.0 })
   balance: number;
 
   @Column({ unique: true })
